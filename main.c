@@ -15,7 +15,7 @@ rtcc_isr(void) {
 
 void
 timer1_isr(void) {
-    ctcss_sel = input_a();
+    
     if (ctcss_sel > sizeof (CTCSS_T1_FREQ)) {
         ctcss_sel = 12; // set to 100Hz by default
     }
@@ -28,6 +28,7 @@ timer1_isr(void) {
 
 #INT_RB
 void int_rb_isr(void) {
+    
     enableCTCSS = input(ENABLE_CTCSS_PIN);
     reverseBurst = input(REVERSE_BURST_PIN);
     RBFlag=1;
@@ -46,6 +47,9 @@ main() {
     //    }
     while (1) {
         if (RBFlag) {
+// CTCSS = RC[5:3],RA[2:0]
+            ctcss_sel = input_c()&0x38;
+            ctcss_sel += input_a()&0x07;
             if (enableCTCSS) {
                 setup_ccp1(CCP_PWM);
                 enable_interrupts(INT_TIMER1);
@@ -87,10 +91,9 @@ initialize(void) {
     enable_interrupts(INT_RB4|INT_RB5);
     enable_interrupts(INT_TIMER1);
     enable_interrupts(GLOBAL);
-    set_tris_a(0x3F);
+    set_tris_a(0x2F);
     set_tris_b(0xF0);
-    
-
+    set_tris_c(0x38); // Inputs RC[5:4]
 }
 
 unsigned int8 
