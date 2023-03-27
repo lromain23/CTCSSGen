@@ -1,6 +1,6 @@
-CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
+CCS PCM C Compiler, Version 4.140, 64991               27-Mar-23 19:45
 
-               Filename:   C:\Users\luc\MPLABXProjects\CTCSSGen.X\build\default\debug\main.lst
+               Filename:   C:\Users\luc\MPLABXProjects\CTCSSGen.X\build\default\production\main.lst
 
                ROM used:   374 words (9%)
                            Largest free fragment is 2048
@@ -11,7 +11,7 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 *
 0000:  MOVLW  00
 0001:  MOVWF  0A
-0002:  GOTO   0FC
+0002:  GOTO   0F1
 0003:  NOP
 0004:  MOVWF  7F
 0005:  SWAPF  03,W
@@ -40,38 +40,32 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 001C:  BTFSS  00.0
 001D:  GOTO   020
 001E:  BTFSC  0C.0
-001F:  GOTO   039
-0020:  BTFSS  0B.5
+001F:  GOTO   035
+0020:  BTFSS  0B.3
 0021:  GOTO   024
-0022:  BTFSC  0B.2
-0023:  GOTO   03B
-0024:  BTFSS  0B.3
-0025:  GOTO   028
-0026:  BTFSC  0B.0
-0027:  GOTO   03D
-0028:  MOVF   26,W
-0029:  MOVWF  04
-002A:  MOVF   27,W
-002B:  MOVWF  20
-002C:  MOVF   28,W
-002D:  MOVWF  21
-002E:  MOVF   29,W
-002F:  MOVWF  22
-0030:  MOVF   2A,W
-0031:  MOVWF  23
-0032:  MOVF   2B,W
-0033:  MOVWF  0A
-0034:  SWAPF  25,W
-0035:  MOVWF  03
-0036:  SWAPF  7F,F
-0037:  SWAPF  7F,W
-0038:  RETFIE
-0039:  BCF    0A.3
-003A:  GOTO   0B0
-003B:  BCF    0A.3
-003C:  GOTO   0AB
-003D:  BCF    0A.3
-003E:  GOTO   0D4
+0022:  BTFSC  0B.0
+0023:  GOTO   037
+0024:  MOVF   26,W
+0025:  MOVWF  04
+0026:  MOVF   27,W
+0027:  MOVWF  20
+0028:  MOVF   28,W
+0029:  MOVWF  21
+002A:  MOVF   29,W
+002B:  MOVWF  22
+002C:  MOVF   2A,W
+002D:  MOVWF  23
+002E:  MOVF   2B,W
+002F:  MOVWF  0A
+0030:  SWAPF  25,W
+0031:  MOVWF  03
+0032:  SWAPF  7F,F
+0033:  SWAPF  7F,W
+0034:  RETFIE
+0035:  BCF    0A.3
+0036:  GOTO   0A5
+0037:  BCF    0A.3
+0038:  GOTO   0C7
 .................... #include "main.h" 
 .................... /* 
 ....................  * File:   main.h 
@@ -2317,7 +2311,7 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 .................... #endif 
 ....................  
 .................... #define main_H 
-.................... #fuses XT 
+.................... #fuses HS 
 .................... #fuses NOPROTECT 
 .................... #fuses BROWNOUT 
 .................... #fuses NOWDT 
@@ -2327,9 +2321,10 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 .................... #define TIMER2_PERIOD 255 
 .................... #define MCU_FREQ_MHZ 2500000 
 .................... #define T1_PRESCALER 1 
-.................... #use delay (clock=10000000) 
+.................... #use delay (clock=10MHz,crystal=10MHz) 
 .................... #use fast_io(A) 
 .................... #use fast_io(B) 
+.................... #use fast_io(C) 
 ....................  
 .................... const unsigned int8 SinTable16[] ={  
 ....................     AMP * 0, 
@@ -2364,49 +2359,49 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 .................... // Timer1 values for each CTCSS frequency when running at 
 .................... // FOSC = 10MHz 
 ....................  
-.................... const unsigned int16 CTCSS_T1_FREQ[] = { 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,     
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/69.3, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/71.9, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/74.4, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/77, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/79.7, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/82.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/85.4, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/88.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/91.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/94.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/97.4, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/100, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/103.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/107.2, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/110.9, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/114.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/118.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/123, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/127.3, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/131.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/136.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/141.3, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/146.2, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/151.4, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/156.7, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/162.2, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/167.9, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/173.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/179.9, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/186.2, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/192.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/203.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/206.5, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/210.7, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/218.1, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/229.1, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/233.6, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/241.8, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/250.3, 
-....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/254.1, 
+.................... const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[5:3]:RA[2:0] 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,    	// 0 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/69.3,	 	// 1 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/71.9,		// 2 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/74.4,		// 3 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/77,		// 4 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/79.7,		// 5 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/82.5,		// 6 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/85.4,		// 7 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/88.5,		// 8 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/91.5,		// 9 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/94.8,		// 10 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/97.4,		// 11 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/100,		// 12 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/103.5,	// 13 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/107.2,	// 14 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/110.9,	// 15 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/114.8,	// 16 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/118.8,	// 17 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/123,		// 18 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/127.3,	// 19 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/131.8,	// 20 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/136.5,	// 21 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/141.3,	// 22 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/146.2,	// 23 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/151.4,	// 24 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/156.7,	// 25 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/162.2,	// 26 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/167.9,	// 27 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/173.8,	// 28 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/179.9,	// 29 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/186.2,	// 30 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/192.8,	// 31 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/203.5,	// 32 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/206.5,	// 33 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/210.7,	// 34 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/218.1,	// 35 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/229.1,	// 37 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/233.6,	// 38 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/241.8,	// 39 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/250.3,	// 40 
+....................     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/254.1,	// 41 
 .................... }; 
 .................... #endif 
 ....................  
@@ -4644,164 +4639,167 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 ....................  
 .................... unsigned int sin_index = 0; 
 .................... int1 rtc_flag = 0; 
-.................... #INT_TIMER0 
 ....................  
-.................... void 
-.................... rtcc_isr(void) { 
-....................     sin_index++; 
-*
-00AB:  INCF   30,F
-....................     rtc_flag = 1; 
-00AC:  BSF    2F.3
-.................... } 
-....................  
-00AD:  BCF    0B.2
-00AE:  BCF    0A.3
-00AF:  GOTO   028
 .................... #INT_TIMER1 
 ....................  
 .................... void 
 .................... timer1_isr(void) { 
-....................     ctcss_sel = input_a(); 
-00B0:  MOVF   05,W
-00B1:  MOVWF  2E
+....................      
 ....................     if (ctcss_sel > sizeof (CTCSS_T1_FREQ)) { 
-00B2:  MOVF   2E,W
-00B3:  SUBLW  54
-00B4:  BTFSC  03.0
-00B5:  GOTO   0B8
+*
+00A5:  MOVF   2E,W
+00A6:  SUBLW  54
+00A7:  BTFSC  03.0
+00A8:  GOTO   0AB
 ....................         ctcss_sel = 12; // set to 100Hz by default 
-00B6:  MOVLW  0C
-00B7:  MOVWF  2E
+00A9:  MOVLW  0C
+00AA:  MOVWF  2E
 ....................     } 
 ....................     unsigned int16 d_val = CTCSS_T1_FREQ[ctcss_sel]; 
 ....................     unsigned int16 t1_val = (2^16 - 1) - d_val; 
-00B8:  BCF    03.0
-00B9:  RLF    2E,W
-00BA:  MOVWF  3D
-00BB:  INCF   3D,W
-00BC:  CALL   053
-00BD:  MOVWF  23
-00BE:  MOVF   3D,W
-00BF:  CALL   053
-00C0:  MOVWF  39
-00C1:  MOVF   23,W
-00C2:  MOVWF  3A
-00C3:  MOVF   39,W
-00C4:  SUBLW  0D
-00C5:  MOVWF  3B
-00C6:  CLRF   3C
-00C7:  MOVF   3A,W
-00C8:  BTFSS  03.0
-00C9:  INCFSZ 3A,W
-00CA:  SUBWF  3C,F
+00AB:  BCF    03.0
+00AC:  RLF    2E,W
+00AD:  MOVWF  3D
+00AE:  INCF   3D,W
+00AF:  CALL   04D
+00B0:  MOVWF  23
+00B1:  MOVF   3D,W
+00B2:  CALL   04D
+00B3:  MOVWF  39
+00B4:  MOVF   23,W
+00B5:  MOVWF  3A
+00B6:  MOVF   39,W
+00B7:  SUBLW  0D
+00B8:  MOVWF  3B
+00B9:  CLRF   3C
+00BA:  MOVF   3A,W
+00BB:  BTFSS  03.0
+00BC:  INCFSZ 3A,W
+00BD:  SUBWF  3C,F
 ....................     set_timer1(t1_val); 
-00CB:  MOVF   3C,W
-00CC:  MOVWF  0F
-00CD:  MOVF   3B,W
-00CE:  MOVWF  0E
+00BE:  MOVF   3C,W
+00BF:  MOVWF  0F
+00C0:  MOVF   3B,W
+00C1:  MOVWF  0E
 ....................     sin_index++; 
-00CF:  INCF   30,F
+00C2:  INCF   30,F
 ....................     rtc_flag = 1; 
-00D0:  BSF    2F.3
+00C3:  BSF    2F.3
 .................... } 
 ....................  
-00D1:  BCF    0C.0
-00D2:  BCF    0A.3
-00D3:  GOTO   028
+00C4:  BCF    0C.0
+00C5:  BCF    0A.3
+00C6:  GOTO   024
 .................... #INT_RB 
 .................... void int_rb_isr(void) { 
 ....................     enableCTCSS = input(ENABLE_CTCSS_PIN); 
-00D4:  BCF    2F.0
-00D5:  BTFSC  06.4
-00D6:  BSF    2F.0
+00C7:  BCF    2F.0
+00C8:  BTFSC  06.4
+00C9:  BSF    2F.0
 ....................     reverseBurst = input(REVERSE_BURST_PIN); 
-00D7:  BCF    2F.1
-00D8:  BTFSC  06.5
-00D9:  BSF    2F.1
+00CA:  BCF    2F.1
+00CB:  BTFSC  06.5
+00CC:  BSF    2F.1
 ....................     RBFlag=1; 
-00DA:  BSF    2F.2
+00CD:  BSF    2F.2
 .................... } 
-00DB:  BCF    0B.0
-00DC:  BCF    0A.3
-00DD:  GOTO   028
+00CE:  BCF    0B.0
+00CF:  BCF    0A.3
+00D0:  GOTO   024
 .................... void 
 .................... main() { 
 *
-00FC:  CLRF   04
-00FD:  BCF    03.7
-00FE:  MOVLW  1F
-00FF:  ANDWF  03,F
-0100:  CLRF   30
-0101:  BCF    2F.3
-0102:  BSF    03.6
-0103:  BCF    1F.0
-0104:  BCF    1F.1
-0105:  BCF    1F.2
-0106:  BCF    1F.3
+00F1:  CLRF   04
+00F2:  BCF    03.7
+00F3:  MOVLW  1F
+00F4:  ANDWF  03,F
+00F5:  CLRF   30
+00F6:  BCF    2F.3
+00F7:  BSF    03.6
+00F8:  BCF    1F.0
+00F9:  BCF    1F.1
+00FA:  BCF    1F.2
+00FB:  BCF    1F.3
+00FC:  BCF    03.6
+00FD:  BCF    1F.6
+00FE:  MOVLW  00
+00FF:  BSF    03.6
+0100:  MOVWF  1E
+0101:  CLRF   19
+0102:  CLRF   1A
+0103:  BSF    03.5
+0104:  CLRF   1E
+0105:  BCF    03.5
+0106:  CLRF   1B
 0107:  BCF    03.6
-0108:  BCF    1F.6
-0109:  MOVLW  00
-010A:  BSF    03.6
-010B:  MOVWF  1E
-010C:  CLRF   19
-010D:  CLRF   1A
-010E:  BSF    03.5
-010F:  CLRF   1E
-0110:  BCF    03.5
-0111:  CLRF   1B
-0112:  BCF    03.6
-0113:  BCF    0D.5
+0108:  BCF    0D.5
 ....................     unsigned int8 x; 
 ....................     enableCTCSS=0; 
-0114:  BCF    2F.0
+0109:  BCF    2F.0
 ....................     reverseBurst=0; 
-0115:  BCF    2F.1
+010A:  BCF    2F.1
 ....................     RBFlag=1; 
-0116:  BSF    2F.2
+010B:  BSF    2F.2
 ....................     initialize(); 
-0117:  GOTO   0DE
+010C:  GOTO   0D1
 ....................     x = 0; 
-0118:  CLRF   31
+010D:  CLRF   31
 ....................     //    while(1) { 
 ....................     //        y = sint(x); 
 ....................     //        x=(x+1)&0x1F; 
 ....................     //    } 
 ....................     while (1) { 
 ....................         if (RBFlag) { 
-0119:  BTFSS  2F.2
-011A:  GOTO   133
+010E:  BTFSS  2F.2
+010F:  GOTO   133
+.................... // CTCSS = RC[5:3],RA[2:0] 
+....................             ctcss_sel = (input_c()&0x07)<<3; 
+0110:  MOVF   07,W
+0111:  ANDLW  07
+0112:  MOVWF  20
+0113:  RLF    20,W
+0114:  MOVWF  2E
+0115:  RLF    2E,F
+0116:  RLF    2E,F
+0117:  MOVLW  F8
+0118:  ANDWF  2E,F
+....................             ctcss_sel += input_a()&0x07; 
+0119:  MOVF   05,W
+011A:  ANDLW  07
+011B:  ADDWF  2E,F
+....................              
 ....................             if (enableCTCSS) { 
-011B:  BTFSS  2F.0
-011C:  GOTO   12D
+011C:  BTFSS  2F.0
+011D:  GOTO   12C
 ....................                 setup_ccp1(CCP_PWM); 
-011D:  BSF    03.5
 011E:  BCF    07.5
-011F:  BCF    03.5
-0120:  BCF    07.5
-0121:  MOVLW  0C
-0122:  MOVWF  17
-0123:  CLRF   1C
-0124:  CLRF   1D
-0125:  MOVLW  01
-0126:  BSF    03.5
-0127:  BSF    03.6
-0128:  MOVWF  1D
+011F:  MOVLW  0C
+0120:  MOVWF  17
+0121:  CLRF   1C
+0122:  CLRF   1D
+0123:  MOVLW  01
+0124:  BSF    03.5
+0125:  BSF    03.6
+0126:  MOVWF  1D
 ....................                 enable_interrupts(INT_TIMER1); 
-0129:  BCF    03.6
-012A:  BSF    0C.0
+0127:  BCF    03.6
+0128:  BSF    0C.0
+....................                 output_bit(PIN_C7,1); 
+0129:  BCF    03.5
+012A:  BSF    07.7
 ....................             } else { 
-012B:  GOTO   131
-012C:  BCF    03.5
+012B:  GOTO   132
 ....................                 setup_ccp1(CCP_OFF); 
-012D:  MOVLW  F0
-012E:  ANDWF  17,F
+012C:  MOVLW  F0
+012D:  ANDWF  17,F
 ....................                 disable_interrupts(INT_TIMER1); 
-012F:  BSF    03.5
-0130:  BCF    0C.0
+012E:  BSF    03.5
+012F:  BCF    0C.0
+....................                 output_bit(PIN_C7,0); 
+0130:  BCF    03.5
+0131:  BCF    07.7
 ....................             } 
 ....................             RBFlag = 0; 
-0131:  BCF    03.5
 0132:  BCF    2F.2
 ....................         } 
 ....................         if (rtc_flag) { 
@@ -4831,7 +4829,7 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 0173:  BCF    2F.3
 ....................         } 
 ....................     } 
-0174:  GOTO   119
+0174:  GOTO   10E
 .................... } 
 .................... // CTCSS frequencies min/max are 67Hz/257Hz 
 .................... // At 4MHz FOSC, using a sine wave with 32 samples,  
@@ -4847,48 +4845,47 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 0175:  SLEEP
 ....................     setup_ccp1(CCP_OFF); 
 *
-00DE:  MOVLW  F0
-00DF:  ANDWF  17,F
+00D1:  MOVLW  F0
+00D2:  ANDWF  17,F
 ....................     setup_timer_2(T2_DIV_BY_4, 255, 1); 
-00E0:  MOVLW  00
-00E1:  MOVWF  21
-00E2:  IORLW  05
-00E3:  MOVWF  12
-00E4:  MOVLW  FF
-00E5:  BSF    03.5
-00E6:  MOVWF  12
-....................     //setup_timer_0(RTCC_INTERNAL); 
-....................     //enable_interrupts(INT_TIMER0); 
-....................     setup_timer_1(T1_DIV_BY_4 | T1_INTERNAL); 
-00E7:  MOVLW  25
-00E8:  BCF    03.5
-00E9:  MOVWF  10
+00D3:  MOVLW  00
+00D4:  MOVWF  21
+00D5:  IORLW  05
+00D6:  MOVWF  12
+00D7:  MOVLW  FF
+00D8:  BSF    03.5
+00D9:  MOVWF  12
+....................     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL); 
+00DA:  MOVLW  05
+00DB:  BCF    03.5
+00DC:  MOVWF  10
 ....................     enable_interrupts(INT_RB4|INT_RB5); 
-00EA:  BSF    0B.3
-00EB:  MOVLW  30
-00EC:  BSF    03.6
-00ED:  IORWF  16,F
+00DD:  BSF    0B.3
+00DE:  MOVLW  30
+00DF:  BSF    03.6
+00E0:  IORWF  16,F
 ....................     enable_interrupts(INT_TIMER1); 
-00EE:  BSF    03.5
-00EF:  BCF    03.6
-00F0:  BSF    0C.0
+00E1:  BSF    03.5
+00E2:  BCF    03.6
+00E3:  BSF    0C.0
 ....................     enable_interrupts(GLOBAL); 
-00F1:  MOVLW  C0
-00F2:  BCF    03.5
-00F3:  IORWF  0B,F
-....................     set_tris_a(0x3F); 
-00F4:  MOVLW  3F
-00F5:  BSF    03.5
-00F6:  MOVWF  05
+00E4:  MOVLW  C0
+00E5:  BCF    03.5
+00E6:  IORWF  0B,F
+....................     set_tris_a(0x2F); 
+00E7:  MOVLW  2F
+00E8:  BSF    03.5
+00E9:  MOVWF  05
 ....................     set_tris_b(0xF0); 
-00F7:  MOVLW  F0
-00F8:  MOVWF  06
-....................      
-....................  
+00EA:  MOVLW  F0
+00EB:  MOVWF  06
+....................     set_tris_c(0x07); // Inputs RC[5:4] 
+00EC:  MOVLW  07
+00ED:  MOVWF  07
 .................... } 
-00F9:  BCF    03.5
-00FA:  BCF    0A.3
-00FB:  GOTO   118 (RETURN)
+00EE:  BCF    03.5
+00EF:  BCF    0A.3
+00F0:  GOTO   10D (RETURN)
 ....................  
 .................... unsigned int8  
 .................... sint(unsigned int8& v) { 
@@ -4906,7 +4903,7 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 0146:  GOTO   14E
 ....................         return (AMP - SinTable16[index]); 
 0147:  MOVF   35,W
-0148:  CALL   03F
+0148:  CALL   039
 0149:  MOVWF  21
 014A:  SUBLW  7F
 014B:  MOVWF  21
@@ -4915,7 +4912,7 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 014D:  GOTO   154
 ....................         return (AMP + SinTable16[index]); 
 014E:  MOVF   35,W
-014F:  CALL   03F
+014F:  CALL   039
 0150:  MOVWF  21
 0151:  MOVLW  7F
 0152:  ADDWF  21,W
@@ -4946,4 +4943,4 @@ CCS PCM C Compiler, Version 4.140, 64991               25-Mar-23 09:22
 ....................  
 
 Configuration Fuses:
-   Word  1: 3FE1   XT NOWDT PUT MCLR NOPROTECT NOCPD BROWNOUT IESO FCMEN
+   Word  1: 3FE2   HS NOWDT PUT MCLR NOPROTECT NOCPD BROWNOUT IESO FCMEN

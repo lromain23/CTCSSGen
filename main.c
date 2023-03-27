@@ -3,13 +3,6 @@
 
 unsigned int sin_index = 0;
 int1 rtc_flag = 0;
-#INT_TIMER0
-
-void
-rtcc_isr(void) {
-    sin_index++;
-    rtc_flag = 1;
-}
 
 #INT_TIMER1
 
@@ -28,7 +21,6 @@ timer1_isr(void) {
 
 #INT_RB
 void int_rb_isr(void) {
-    
     enableCTCSS = input(ENABLE_CTCSS_PIN);
     reverseBurst = input(REVERSE_BURST_PIN);
     RBFlag=1;
@@ -48,14 +40,17 @@ main() {
     while (1) {
         if (RBFlag) {
 // CTCSS = RC[5:3],RA[2:0]
-            ctcss_sel = input_c()&0x38;
+            ctcss_sel = (input_c()&0x07)<<3;
             ctcss_sel += input_a()&0x07;
+            
             if (enableCTCSS) {
                 setup_ccp1(CCP_PWM);
                 enable_interrupts(INT_TIMER1);
+                output_bit(PIN_C7,1);
             } else {
                 setup_ccp1(CCP_OFF);
                 disable_interrupts(INT_TIMER1);
+                output_bit(PIN_C7,0);
             }
             RBFlag = 0;
         }
@@ -85,15 +80,13 @@ void
 initialize(void) {
     setup_ccp1(CCP_OFF);
     setup_timer_2(T2_DIV_BY_4, 255, 1);
-    //setup_timer_0(RTCC_INTERNAL);
-    //enable_interrupts(INT_TIMER0);
-    setup_timer_1(T1_DIV_BY_4 | T1_INTERNAL);
+    setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
     enable_interrupts(INT_RB4|INT_RB5);
     enable_interrupts(INT_TIMER1);
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
     set_tris_b(0xF0);
-    set_tris_c(0x38); // Inputs RC[5:4]
+    set_tris_c(0x07); // Inputs RC[5:4]
 }
 
 unsigned int8 

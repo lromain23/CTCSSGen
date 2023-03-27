@@ -23,8 +23,8 @@
 02F.2   RBFlag
 02F.3   rtc_flag
 030     sin_index
-031     main.x
 031-034 atan2.y
+031     main.x
 032     set_ctcss_period.y
 032     main.@SCRATCH1
 034-035 @MUL1616.P1
@@ -45,29 +45,28 @@
 11B.7   C1OUT
 
 ROM Allocation:
-00003F  SinTable16
-000053  CTCSS_T1_FREQ
-0000AB  rtcc_isr
-0000B0  timer1_isr
-0000D4  int_rb_isr
-0000FC  main
-0000DE  initialize
+000039  SinTable16
+00004D  CTCSS_T1_FREQ
+0000A5  timer1_isr
+0000C7  int_rb_isr
+0000F1  main
+0000D1  initialize
 000140  sint
 000140  set_ctcss_period
 00015B  @MUL1616
-0000FC  @cinit1
-000114  @cinit2
+0000F1  @cinit1
+000109  @cinit2
 
 Project Directory:
     C:\Users\luc\MPLABXProjects\CTCSSGen.X\
 
 Project Files:
-    main.c                                                  [25-Mar-23 09:22  CRC=07A86E9C]
-    main.h                                                  [25-Mar-23 09:18  CRC=E33F5EE1]
+    main.c                                                  [27-Mar-23 16:16  CRC=004DEF45]
+    main.h                                                  [27-Mar-23 15:50  CRC=CE0F37C9]
     ..\..\..\..\Program Files (x86)\PICC\devices\16F690.h   [30-Nov-12 18:59  CRC=46D65B97]
     ..\..\..\..\Program Files (x86)\PICC\drivers\math.h     [28-Sep-12 11:35  CRC=546412C9]
 
-Source signature=DA864EA6
+Source signature=BDFBA837
 
 Units:
     main (main)
@@ -84,10 +83,10 @@ Compiler Settings:
        #define __16F690 1
 
 Output Files:
-    Errors:      build\default\debug\main.err
-    INHX8:       build\default\debug\main.hex
-    Symbols:     build\default\debug\main.sym
-    List:        build\default\debug\main.lst
-    Debug/COFF:  build\default\debug\main.cof
+    Errors:      build\default\production\main.err
+    INHX8:       build\default\production\main.hex
+    Symbols:     build\default\production\main.sym
+    List:        build\default\production\main.lst
+    Debug/COFF:  build\default\production\main.cof
     Project:     main.PJT
-    Call Tree:   build\default\debug\main.tre
+    Call Tree:   build\default\production\main.tre

@@ -1,0 +1,6 @@
+C:\Users\luc\MPLABXProjects\CTCSSGen.X\main.c:16:1:  Warning#214  Operator precedance rules may not be as intended, use () to clarify
+C:\Users\luc\MPLABXProjects\CTCSSGen.X\main.c:40:1:  Warning#203  Condition always TRUE
+C:\Users\luc\MPLABXProjects\CTCSSGen.X\main.h:47:16:  Warning#202  Variable never used:   update_dc_count
+      Memory usage:   ROM=9%      RAM=8% - 15%
+      0 Errors,  3 Warnings.
+Build Successful.
