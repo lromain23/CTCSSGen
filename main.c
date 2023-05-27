@@ -7,16 +7,12 @@ int1 rtc_flag = 0;
 #INT_TIMER1
 
 void
-timer1_isr(void) {
-    
-    if (ctcss_sel > sizeof (CTCSS_T1_FREQ)) {
-        ctcss_sel = 12; // set to 100Hz by default
-    }
-    unsigned int16 d_val = CTCSS_T1_FREQ[ctcss_sel];
-    unsigned int16 t1_val = (2^16 - 1) - d_val;
-    set_timer1(t1_val);
+timer1_isr(void) { 
+    setup_timer_1(T1_DISABLED);
     sin_index++;
     rtc_flag = 1;
+    set_timer1(t1_val);
+    setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
 }
 
 #INT_RB
@@ -37,28 +33,41 @@ main() {
     //        y = sint(x);
     //        x=(x+1)&0x1F;
     //    }
+    
     while (1) {
         if (RBFlag) {
 // CTCSS = RC[5:3],RA[2:0]
             ctcss_sel = (input_c()&0x07)<<3;
             ctcss_sel += input_a()&0x07;
-            
+            if (ctcss_sel > ctcss_table_size) {
+                ctcss_sel = 12; // set to 100Hz by default
+            }                
+            if (ctcss_sel < 37) {
+                increment = 1;
+            } else {
+                // Starting at ctcss[37], the MCU is too slow
+                // Run the sine wave twice as fast.
+                increment = 2;
+            }
+            d_val = CTCSS_T1_FREQ[ctcss_sel];
+            t1_val = (2^16) - d_val + TIMER1_LATENCY;
             if (enableCTCSS) {
-                setup_ccp1(CCP_PWM);
-                enable_interrupts(INT_TIMER1);
                 output_bit(PIN_C7,1);
+                enable_interrupts(INT_TIMER1);
+                setup_ccp1(CCP_PWM);
             } else {
                 setup_ccp1(CCP_OFF);
                 disable_interrupts(INT_TIMER1);
                 output_bit(PIN_C7,0);
             }
             RBFlag = 0;
+            
         }
         if (rtc_flag) {
             if (reverseBurst) {
-                x = (x - 1)&0x1F;
+                x = (x - increment)&0x1F;
             } else {
-                x = (x + 1)&0x1F;
+                x = (x + increment)&0x1F;
             }
             // RESULT OF Y OVERFLOWS!!!
             // Sin varies from 0 to 2*127
@@ -86,7 +95,7 @@ initialize(void) {
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
     set_tris_b(0xF0);
-    set_tris_c(0x07); // Inputs RC[5:4]
+    set_tris_c(0x07); // Inputs RC[2:0]
 }
 
 unsigned int8 
