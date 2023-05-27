@@ -16,9 +16,13 @@
 #case
 #define AMP 127
 #define SIN_SAMPLES 32
+#define SIN16_SAMPLES 16
 #define TIMER2_PERIOD 255
 #define MCU_FREQ_MHZ 2500000
 #define T1_PRESCALER 1
+// Timer1 latency consumes 4 instructions from 
+// T1_disable to T1 re-enabled.
+#define TIMER1_LATENCY 24
 #use delay (clock=10MHz,crystal=10MHz)
 #use fast_io(A)
 #use fast_io(B)
@@ -44,7 +48,10 @@ const unsigned int8 SinTable16[] ={
 
 unsigned int sint( unsigned int& v);
 void set_ctcss_period(unsigned int& p);
-unsigned int16 update_dc_count;
+unsigned int16 d_val;
+unsigned int16 t1_val;
+unsigned int8 increment;
+//unsigned int16 update_dc_count;
 unsigned int8 ctcss_sel;
 int1 enableCTCSS;
 int1 reverseBurst;
@@ -57,8 +64,8 @@ void initialize(void);
 // Timer1 values for each CTCSS frequency when running at
 // FOSC = 10MHz
 
-const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[5:3]:RA[2:0]
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,    	// 0
+const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
+    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,    	// 0 (1166)
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/69.3,	 	// 1
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/71.9,		// 2
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/74.4,		// 3
@@ -90,16 +97,17 @@ const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[5:3]:RA[2:0]
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/179.9,	// 29
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/186.2,	// 30
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/192.8,	// 31
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/203.5,	// 32
+    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/203.5,	// 32 (384)
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/206.5,	// 33
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/210.7,	// 34
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/218.1,	// 35
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/229.1,	// 37
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/233.6,	// 38
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/241.8,	// 39
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/250.3,	// 40
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/254.1,	// 41
+    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36 (346))
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/229.1,	// 37
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/233.6,	// 38
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/241.8,	// 39
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (307.5)
 };
+const unsigned int8 ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
 #endif
 
