@@ -108,6 +108,7 @@ const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (307.5)
 };
+
 const unsigned int8 ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
 #endif
 
