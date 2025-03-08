@@ -1,8 +1,8 @@
-CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
+CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 09:32
 
-               Filename:   C:\Users\m3n2bn\MPLABXProjects\CTCSSGen.X\build\default\production\main.lst
+               Filename:   C:\Users\m3n2bn\MPLABXProjects\CTCSSGen.X\build\default\debug\main.lst
 
-               ROM used:   399 words (10%)
+               ROM used:   401 words (10%)
                            Largest free fragment is 2048
                RAM used:   24 (9%) at main() level
                            41 (16%) worst case
@@ -4736,7 +4736,7 @@ CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
 ....................     while (1) { 
 ....................         if (RBFlag) { 
 00F8:  BTFSS  32.2
-00F9:  GOTO   14C
+00F9:  GOTO   14E
 ....................             // CTCSS = RC[5:3],RA[2:0] 
 ....................             ctcss_sel = (input_c()&0x07) << 3; 
 00FA:  MOVF   07,W
@@ -4752,129 +4752,132 @@ CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
 0103:  MOVF   05,W
 0104:  ANDLW  07
 0105:  ADDWF  31,F
+....................             ctcss_sel = 12; 
+0106:  MOVLW  0C
+0107:  MOVWF  31
 ....................             if (ctcss_sel > ctcss_table_size) { 
-0106:  MOVF   31,W
-0107:  SUBLW  2A
-0108:  BTFSC  03.0
-0109:  GOTO   10C
+0108:  MOVF   31,W
+0109:  SUBLW  2A
+010A:  BTFSC  03.0
+010B:  GOTO   10E
 ....................                 ctcss_sel = 12; // set to 100Hz by default 
-010A:  MOVLW  0C
-010B:  MOVWF  31
+010C:  MOVLW  0C
+010D:  MOVWF  31
 ....................             } 
 ....................  
 ....................             if (ctcss_sel < 37) { 
-010C:  MOVF   31,W
-010D:  SUBLW  24
-010E:  BTFSS  03.0
-010F:  GOTO   113
+010E:  MOVF   31,W
+010F:  SUBLW  24
+0110:  BTFSS  03.0
+0111:  GOTO   115
 ....................                 increment = 1; 
-0110:  MOVLW  01
-0111:  MOVWF  30
+0112:  MOVLW  01
+0113:  MOVWF  30
 ....................             } else { 
-0112:  GOTO   115
+0114:  GOTO   117
 ....................                 // Starting at ctcss[37], the MCU is too slow 
 ....................                 // Run the sine wave twice as fast. 
 ....................                 increment = 2; 
-0113:  MOVLW  02
-0114:  MOVWF  30
+0115:  MOVLW  02
+0116:  MOVWF  30
 ....................             } 
 ....................             d_val = CTCSS_T1_FREQ[ctcss_sel]; 
-0115:  BCF    03.0
-0116:  RLF    31,W
-0117:  MOVWF  35
-0118:  INCF   35,W
-0119:  CALL   04D
-011A:  MOVWF  23
-011B:  MOVF   35,W
-011C:  CALL   04D
-011D:  MOVWF  2C
-011E:  MOVF   23,W
-011F:  MOVWF  2D
+0117:  BCF    03.0
+0118:  RLF    31,W
+0119:  MOVWF  35
+011A:  INCF   35,W
+011B:  CALL   04D
+011C:  MOVWF  23
+011D:  MOVF   35,W
+011E:  CALL   04D
+011F:  MOVWF  2C
+0120:  MOVF   23,W
+0121:  MOVWF  2D
 ....................             t1_val = (2^16) - d_val + TIMER1_LATENCY; 
-0120:  MOVF   2C,W
-0121:  SUBLW  12
-0122:  MOVWF  35
-0123:  CLRF   36
-0124:  MOVF   2D,W
-0125:  BTFSS  03.0
-0126:  INCFSZ 2D,W
-0127:  SUBWF  36,F
-0128:  MOVLW  18
-0129:  ADDWF  35,W
-012A:  MOVWF  2E
-012B:  MOVF   36,W
-012C:  MOVWF  2F
-012D:  BTFSC  03.0
-012E:  INCF   2F,F
+0122:  MOVF   2C,W
+0123:  SUBLW  12
+0124:  MOVWF  35
+0125:  CLRF   36
+0126:  MOVF   2D,W
+0127:  BTFSS  03.0
+0128:  INCFSZ 2D,W
+0129:  SUBWF  36,F
+012A:  MOVLW  18
+012B:  ADDWF  35,W
+012C:  MOVWF  2E
+012D:  MOVF   36,W
+012E:  MOVWF  2F
+012F:  BTFSC  03.0
+0130:  INCF   2F,F
 ....................             if (enableCTCSS) { 
-012F:  BTFSS  32.0
-0130:  GOTO   141
+0131:  BTFSS  32.0
+0132:  GOTO   143
 ....................                 output_bit(PIN_C7, 1); 
-0131:  BSF    07.7
+0133:  BSF    07.7
 ....................                 enable_interrupts(INT_TIMER1); 
-0132:  BSF    03.5
-0133:  BSF    0C.0
+0134:  BSF    03.5
+0135:  BSF    0C.0
 ....................                 setup_ccp1(CCP_PWM); 
-0134:  BCF    03.5
-0135:  BCF    07.5
-0136:  MOVLW  0C
-0137:  MOVWF  17
-0138:  CLRF   1C
-0139:  CLRF   1D
-013A:  MOVLW  01
-013B:  BSF    03.5
-013C:  BSF    03.6
-013D:  MOVWF  1D
+0136:  BCF    03.5
+0137:  BCF    07.5
+0138:  MOVLW  0C
+0139:  MOVWF  17
+013A:  CLRF   1C
+013B:  CLRF   1D
+013C:  MOVLW  01
+013D:  BSF    03.5
+013E:  BSF    03.6
+013F:  MOVWF  1D
 ....................             } else { 
-013E:  GOTO   149
-013F:  BCF    03.5
-0140:  BCF    03.6
+0140:  GOTO   14B
+0141:  BCF    03.5
+0142:  BCF    03.6
 ....................                 setup_ccp1(CCP_OFF); 
-0141:  MOVLW  F0
-0142:  ANDWF  17,F
+0143:  MOVLW  F0
+0144:  ANDWF  17,F
 ....................                 disable_interrupts(INT_TIMER1); 
-0143:  BSF    03.5
-0144:  BCF    0C.0
+0145:  BSF    03.5
+0146:  BCF    0C.0
 ....................                 output_bit(PIN_C7, 0); 
-0145:  BCF    03.5
-0146:  BCF    07.7
-0147:  BSF    03.5
-0148:  BSF    03.6
+0147:  BCF    03.5
+0148:  BCF    07.7
+0149:  BSF    03.5
+014A:  BSF    03.6
 ....................             } 
 ....................             RBFlag = 0; 
-0149:  BCF    03.5
-014A:  BCF    03.6
-014B:  BCF    32.2
+014B:  BCF    03.5
+014C:  BCF    03.6
+014D:  BCF    32.2
 ....................  
 ....................         } 
 ....................         if (rtc_flag) { 
-014C:  BTFSS  32.3
-014D:  GOTO   18D
+014E:  BTFSS  32.3
+014F:  GOTO   18F
 ....................             if (reverseBurst) { 
-014E:  BTFSS  32.1
-014F:  GOTO   155
+0150:  BTFSS  32.1
+0151:  GOTO   157
 ....................                 x = (x - increment)&0x1F; 
-0150:  MOVF   30,W
-0151:  SUBWF  34,W
-0152:  ANDLW  1F
-0153:  MOVWF  34
+0152:  MOVF   30,W
+0153:  SUBWF  34,W
+0154:  ANDLW  1F
+0155:  MOVWF  34
 ....................             } else { 
-0154:  GOTO   159
+0156:  GOTO   15B
 ....................                 x = (x + increment)&0x1F; 
-0155:  MOVF   30,W
-0156:  ADDWF  34,W
-0157:  ANDLW  1F
-0158:  MOVWF  34
+0157:  MOVF   30,W
+0158:  ADDWF  34,W
+0159:  ANDLW  1F
+015A:  MOVWF  34
 ....................             } 
 ....................             // RESULT OF Y OVERFLOWS!!! 
 ....................             // Sin varies from 0 to 2*127 
 ....................             set_ctcss_period(x); 
 ....................             rtc_flag = 0; 
 *
-018C:  BCF    32.3
+018E:  BCF    32.3
 ....................         } 
 ....................     } 
-018D:  GOTO   0F8
+018F:  GOTO   0F8
 .................... } 
 .................... // CTCSS frequencies min/max are 67Hz/257Hz 
 .................... // At 4MHz FOSC, using a sine wave with 32 samples,  
@@ -4887,7 +4890,7 @@ CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
 ....................  
 .................... void 
 .................... initialize(void) { 
-018E:  SLEEP
+0190:  SLEEP
 ....................     setup_ccp1(CCP_OFF); 
 *
 00BB:  MOVLW  F0
@@ -4935,33 +4938,33 @@ CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
 .................... unsigned int8 
 .................... sint(unsigned int8& v) { 
 *
-0159:  MOVF   34,W
-015A:  ANDLW  1F
-015B:  MOVWF  37
-015C:  ANDLW  0F
-015D:  MOVWF  38
+015B:  MOVF   34,W
+015C:  ANDLW  1F
+015D:  MOVWF  37
+015E:  ANDLW  0F
+015F:  MOVWF  38
 ....................     // PSAMPLES = 32 
 ....................     unsigned int8 angle = v & 0x1F; 
 ....................     unsigned int8 index = angle & 0x0F; 
 ....................     if ((angle & 0x10)) { 
-015E:  BTFSS  37.4
-015F:  GOTO   167
+0160:  BTFSS  37.4
+0161:  GOTO   169
 ....................         return (AMP - SinTable16[index]); 
-0160:  MOVF   38,W
-0161:  CALL   039
-0162:  MOVWF  21
-0163:  SUBLW  7F
+0162:  MOVF   38,W
+0163:  CALL   039
 0164:  MOVWF  21
-0165:  GOTO   16D
+0165:  SUBLW  7F
+0166:  MOVWF  21
+0167:  GOTO   16F
 ....................     } else { 
-0166:  GOTO   16D
+0168:  GOTO   16F
 ....................         return (AMP + SinTable16[index]); 
-0167:  MOVF   38,W
-0168:  CALL   039
-0169:  MOVWF  21
-016A:  MOVLW  7F
-016B:  ADDWF  21,W
-016C:  MOVWF  21
+0169:  MOVF   38,W
+016A:  CALL   039
+016B:  MOVWF  21
+016C:  MOVLW  7F
+016D:  ADDWF  21,W
+016E:  MOVWF  21
 ....................     } 
 .................... } 
 ....................  
@@ -4970,19 +4973,19 @@ CCS PCM C Compiler, Version 4.140, 64991               06-Mar-25 11:42
 ....................     // p is CTCSS period 
 ....................     unsigned int8 y; 
 ....................     y = (TIMER2_PERIOD / 2 * AMP) * sint(p); 
-016D:  MOVLW  3F
-016E:  MOVWF  38
-016F:  MOVLW  01
-0170:  MOVWF  37
-0171:  CLRF   3A
-0172:  MOVF   21,W
-0173:  MOVWF  39
+016F:  MOVLW  3F
+0170:  MOVWF  38
+0171:  MOVLW  01
+0172:  MOVWF  37
+0173:  CLRF   3A
+0174:  MOVF   21,W
+0175:  MOVWF  39
 *
-0188:  MOVF   21,W
-0189:  MOVWF  35
+018A:  MOVF   21,W
+018B:  MOVWF  35
 ....................     set_pwm1_duty(y); 
-018A:  MOVF   35,W
-018B:  MOVWF  15
+018C:  MOVF   35,W
+018D:  MOVWF  15
 .................... } 
 ....................  
 ....................  

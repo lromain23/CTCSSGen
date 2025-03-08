@@ -51,9 +51,9 @@ ROM Allocation:
 0000B1  int_rb_isr
 0000DB  main
 0000BB  initialize
-000159  sint
-000159  set_ctcss_period
-000174  @MUL1616
+00015B  sint
+00015B  set_ctcss_period
+000176  @MUL1616
 0000DB  @cinit1
 0000F3  @cinit2
 
@@ -61,12 +61,12 @@ Project Directory:
     C:\Users\m3n2bn\MPLABXProjects\CTCSSGen.X\
 
 Project Files:
-    main.c                                                  [06-Mar-25 11:36  CRC=02976A0F]
+    main.c                                                  [06-Mar-25 09:32  CRC=14F79A91]
     main.h                                                  [27-May-23 18:53  CRC=FC824A27]
     ..\..\..\..\Program Files (x86)\PICC\devices\16F690.h   [30-Nov-12 17:59  CRC=46D65B97]
     ..\..\..\..\Program Files (x86)\PICC\drivers\math.h     [28-Sep-12 10:35  CRC=546412C9]
 
-Source signature=EEB8355F
+Source signature=011865E1
 
 Units:
     main (main)
@@ -83,10 +83,10 @@ Compiler Settings:
        #define __16F690 1
 
 Output Files:
-    Errors:      build\default\production\main.err
-    INHX8:       build\default\production\main.hex
-    Symbols:     build\default\production\main.sym
-    List:        build\default\production\main.lst
-    Debug/COFF:  build\default\production\main.cof
+    Errors:      build\default\debug\main.err
+    INHX8:       build\default\debug\main.hex
+    Symbols:     build\default\debug\main.sym
+    List:        build\default\debug\main.lst
+    Debug/COFF:  build\default\debug\main.cof
     Project:     main.PJT
-    Call Tree:   build\default\production\main.tre
+    Call Tree:   build\default\debug\main.tre
