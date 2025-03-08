@@ -6,8 +6,7 @@ int1 rtc_flag = 0;
 
 #INT_TIMER1
 
-void
-timer1_isr(void) { 
+void timer1_isr(void) {
     setup_timer_1(T1_DISABLED);
     sin_index++;
     rtc_flag = 1;
@@ -16,32 +15,35 @@ timer1_isr(void) {
 }
 
 #INT_RB
+
 void int_rb_isr(void) {
     enableCTCSS = input(ENABLE_CTCSS_PIN);
     reverseBurst = input(REVERSE_BURST_PIN);
-    RBFlag=1;
+    RBFlag = 1;
 }
+
 void
 main() {
     unsigned int8 x;
-    enableCTCSS=0;
-    reverseBurst=0;
-    RBFlag=1;
+    enableCTCSS = 0;
+    reverseBurst = 0;
+    RBFlag = 1;
     initialize();
     x = 0;
     //    while(1) {
     //        y = sint(x);
     //        x=(x+1)&0x1F;
     //    }
-    
+
     while (1) {
         if (RBFlag) {
-// CTCSS = RC[5:3],RA[2:0]
-            ctcss_sel = (input_c()&0x07)<<3;
+            // CTCSS = RC[5:3],RA[2:0]
+            ctcss_sel = (input_c()&0x07) << 3;
             ctcss_sel += input_a()&0x07;
             if (ctcss_sel > ctcss_table_size) {
                 ctcss_sel = 12; // set to 100Hz by default
-            }                
+            }
+
             if (ctcss_sel < 37) {
                 increment = 1;
             } else {
@@ -52,16 +54,16 @@ main() {
             d_val = CTCSS_T1_FREQ[ctcss_sel];
             t1_val = (2^16) - d_val + TIMER1_LATENCY;
             if (enableCTCSS) {
-                output_bit(PIN_C7,1);
+                output_bit(PIN_C7, 1);
                 enable_interrupts(INT_TIMER1);
                 setup_ccp1(CCP_PWM);
             } else {
                 setup_ccp1(CCP_OFF);
                 disable_interrupts(INT_TIMER1);
-                output_bit(PIN_C7,0);
+                output_bit(PIN_C7, 0);
             }
             RBFlag = 0;
-            
+
         }
         if (rtc_flag) {
             if (reverseBurst) {
@@ -90,7 +92,7 @@ initialize(void) {
     setup_ccp1(CCP_OFF);
     setup_timer_2(T2_DIV_BY_4, 255, 1);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
-    enable_interrupts(INT_RB4|INT_RB5);
+    enable_interrupts(INT_RB4 | INT_RB5);
     enable_interrupts(INT_TIMER1);
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
@@ -98,7 +100,7 @@ initialize(void) {
     set_tris_c(0x07); // Inputs RC[2:0]
 }
 
-unsigned int8 
+unsigned int8
 sint(unsigned int8& v) {
     // PSAMPLES = 32
     unsigned int8 angle = v & 0x1F;
