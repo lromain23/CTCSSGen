@@ -24,12 +24,10 @@ void int_rb_isr(void) {
 
 void
 main() {
-    unsigned int8 x;
     enableCTCSS = 0;
     reverseBurst = 0;
     RBFlag = 1;
     initialize();
-    x = 0;
     //    while(1) {
     //        y = sint(x);
     //        x=(x+1)&0x1F;
@@ -66,6 +64,7 @@ main() {
 
         }
         if (rtc_flag) {
+    	    unsigned int8 x;
             if (reverseBurst) {
                 x = (x - increment)&0x1F;
             } else {
@@ -100,6 +99,10 @@ initialize(void) {
     set_tris_c(0x07); // Inputs RC[2:0]
 }
 
+// AMP is multiplied twice!!!
+// Once inside SinTable16
+// Second time inside set_ctcss_period
+// Substracted once inside sint() below
 unsigned int8
 sint(unsigned int8& v) {
     // PSAMPLES = 32
@@ -113,7 +116,7 @@ sint(unsigned int8& v) {
 }
 
 void
-set_ctcss_period(unsigned int& p) {
+set_ctcss_period(unsigned int8& p) {
     // p is CTCSS period
     unsigned int8 y;
     y = (TIMER2_PERIOD / 2 * AMP) * sint(p);
