@@ -1,126 +1,203 @@
 #include "main.h"
-#include <math.h>
+//#include <math.h>
 
-unsigned int sin_index = 0;
-int1 rtc_flag = 0;
 
 #INT_TIMER1
-
 void timer1_isr(void) {
     setup_timer_1(T1_DISABLED);
-    sin_index++;
-    rtc_flag = 1;
     set_timer1(t1_val);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
+    rtc_flag = 1;
 }
 
-#INT_RB
-
-void int_rb_isr(void) {
-    enableCTCSS = input(ENABLE_CTCSS_PIN);
-    reverseBurst = input(REVERSE_BURST_PIN);
-    RBFlag = 1;
+#INT_AD
+void read_adc(void) {
+    // Every 44uS
+    ADC_FLAG=1;
+    //clear_interrupt(INT_AD);
 }
+//#INT_RB
+
+//void int_rb_isr(void) {
+
+ //   RBFlag = 1;
+//}
 
 void
 main() {
-    enableCTCSS = 0;
-    reverseBurst = 0;
-    RBFlag = 1;
     initialize();
-    //    while(1) {
-    //        y = sint(x);
-    //        x=(x+1)&0x1F;
-    //    }
-
+    unsigned int sin_index;
     while (1) {
-        if (RBFlag) {
-            // CTCSS = RC[5:3],RA[2:0]
-            ctcss_sel = (input_c()&0x07) << 3;
-            ctcss_sel += input_a()&0x07;
-            if (ctcss_sel > ctcss_table_size) {
-                ctcss_sel = 12; // set to 100Hz by default
-            }
-
-            if (ctcss_sel < 37) {
-                increment = 1;
-            } else {
-                // Starting at ctcss[37], the MCU is too slow
-                // Run the sine wave twice as fast.
-                increment = 2;
-            }
-            d_val = CTCSS_T1_FREQ[ctcss_sel];
-            t1_val = (2^16) - d_val + TIMER1_LATENCY;
-            if (enableCTCSS) {
-                output_bit(PIN_C7, 1);
+        ptt_in      = (input(PTT_IN)==0); // Active low pin
+        //toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
+        // Disconnect TD - Simplify PIC programming.
+        toneDisable = 0;
+        switch(state) {
+            case idle:
+                if(ptt_in) {
+                    state=tone_start;
+                }
+                //output_bit(PTT_OUT, PTT_OFF);
+                break;
+            case tone_start:
+                reverseBurst = 0;
+                start_tone();
                 enable_interrupts(INT_TIMER1);
-                setup_ccp1(CCP_PWM);
-            } else {
-                setup_ccp1(CCP_OFF);
-                disable_interrupts(INT_TIMER1);
-                output_bit(PIN_C7, 0);
-            }
-            RBFlag = 0;
-
+                output_bit(PTT_OUT, PTT_ON);
+                state=tone_on;
+                break;
+            case tone_on:
+                if(!ptt_in) {
+                    reverseBurst = (input(REVERSE_BURST)==0); // ActiveLow pin
+                    if ( ~reverseBurst) {
+                      stop_tone();
+                    }
+                    tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
+                    state=tone_tail;
+                }
+                break;
+            case tone_tail:
+                //output_bit(PTT_OUT, PTT_OFF); // Test??? Remove
+                if (tail_counter==0) {
+                    output_bit(PTT_OUT, PTT_OFF);
+                    stop_tone();
+                    disable_interrupts(INT_TIMER1);
+                    state=idle;
+                }
+                if (ptt_in) {
+                    state=tone_start;
+                }
+                break;
         }
         if (rtc_flag) {
-    	    unsigned int8 x;
+            rtc_flag=0;
             if (reverseBurst) {
-                x = (x - increment)&0x1F;
+                sin_index = (sin_index - increment)&0x1F;
             } else {
-                x = (x + increment)&0x1F;
+                sin_index = (sin_index + increment)&0x1F;
+            }
+            if ( tail_counter ) {
+                tail_counter--;      
             }
             // RESULT OF Y OVERFLOWS!!!
             // Sin varies from 0 to 2*127
-            set_ctcss_period(x);
-            rtc_flag = 0;
+            set_ctcss_period(sin_index);
+            getAmplitude();
         }
+
     }
 }
-// CTCSS frequencies min/max are 67Hz/257Hz
-// At 4MHz FOSC, using a sine wave with 32 samples, 
-// The PWM counter values are
-// 466 and 122 respectively.
-// At 10MHz FOCS, using a sine wave with 16 samples
-// The PWM duty cycle must be refreshed 
-// between 614 and 2332 cycles.
-//
+
+void debug(unsigned int line,char* str) {
+    putc(line);
+    printf(str);
+}
+
+void getAmplitude(void) {
+    unsigned long new_amplitude;
+    new_amplitude = read_adc(ADC_READ_ONLY);
+    if ( new_amplitude != amplitude) {
+        updateSinAmpTable();
+        amplitude = new_amplitude;
+    }
+    read_adc(ADC_START_ONLY);
+}
+
+void start_tone(void) {
+    unsigned int dip_val;
+    dip_val = (~input_c() & 0x07)<<3;
+    ctcss_sel = dip_val;
+    dip_val = ~input_a()&0x07;
+    ctcss_sel += dip_val;
+    char tone_str[20];
+    sprintf(tone_str"ToneSel=<%d>  ",ctcss_sel);
+    debug(1,tone_str);
+    //
+    // DEBUG val.
+    //       
+    if (ctcss_sel > ctcss_table_size) {
+        ctcss_sel = 12; // set to 100Hz by default
+    }
+    if (ctcss_sel < 37) {
+        increment = 1;
+    } else {
+                // Starting at ctcss[37], the MCU is too slow
+        // Run the sine wave twice as fast.
+        increment = 2;
+    }
+    //
+    // CTCSS tones range from 0-->67Hz to 41-->254.1 Tail must be 150ms.
+    //
+    // 0.4ms --> 0.123ms
+    d_val = CTCSS_T1_FREQ[ctcss_sel];
+    t1_val = (2^16) - d_val + (unsigned long)TIMER1_LATENCY;
+    
+    sprintf(tone_str"DelayVal=<%Lu>  ",d_val);
+    debug(2,tone_str);
+    sprintf(tone_str"Timer1=<%Lu>  ",t1_val);
+    debug(3,tone_str);
+
+    if ( ! toneDisable ) {
+      setup_ccp1(CCP_PWM);
+    }
+}
+void stop_tone(void) {
+    setup_ccp1(CCP_OFF);
+}
 
 void
 initialize(void) {
     setup_ccp1(CCP_OFF);
     setup_timer_2(T2_DIV_BY_4, 255, 1);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
-    enable_interrupts(INT_RB4 | INT_RB5);
-    enable_interrupts(INT_TIMER1);
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
-    set_tris_b(0xF0);
-    set_tris_c(0x07); // Inputs RC[2:0]
+    set_tris_b(0xF0); // Not used
+    set_tris_c(0xD7); // Inputs RC[2:0], RC[4,6,7]
+    setup_adc(ADC_CLOCK_INTERNAL);
+    setup_adc_ports(AMPLITUDE_PORT);
+    set_adc_channel(AMPLITUDE_CHANNEL);
+    read_adc(ADC_START_ONLY);
+    state=idle;
+    amplitude=255;
+    output_bit(PTT_OUT, PTT_OFF);
+    
+    char tone_str[20];
+    sprintf(tone_str"Hello!");
+    debug(4,tone_str);
 }
 
-// AMP is multiplied twice!!!
-// Once inside SinTable16
 // Second time inside set_ctcss_period
 // Substracted once inside sint() below
-unsigned int8
-sint(unsigned int8& v) {
+unsigned int sint(unsigned int& v) {
     // PSAMPLES = 32
-    unsigned int8 angle = v & 0x1F;
-    unsigned int8 index = angle & 0x0F;
+    unsigned int angle = v & 0x1F;
+    unsigned int index = angle & 0x0F;
     if ((angle & 0x10)) {
         return (AMP - SinTable16[index]);
     } else {
         return (AMP + SinTable16[index]);
     }
 }
-
-void
-set_ctcss_period(unsigned int8& p) {
+void updateSinAmpTable(void) {
+    int x;
+    // TIMER2_PERIOD = 255
+    // Sin(t) ranges from 0 to 2*AMP(0:254)
+    // Amplitude ranges from 0 to ADC_MAX (0:255)
+    // DutyCycle must range from 0% (0) to 100% (4*(TIMER2_PERIOD+1))
+    unsigned long duty_cycle;
+    for(x=0;x<32;x++) {
+        // = 4 * (256)/ (2*128) * (Sin(t) * amp/AMP_MAX)
+        // = 4 * 
+        duty_cycle = (unsigned long)(4*(TIMER2_PERIOD+1)/(2*(AMP+1))*((unsigned long)sint(x)*amplitude/(ADC_MAX+1)));
+        SinAmp[x] = duty_cycle;
+    }
+}
+void set_ctcss_period(unsigned int& index) {
     // p is CTCSS period
-    unsigned int8 y;
-    y = (TIMER2_PERIOD / 2 * AMP) * sint(p);
-    set_pwm1_duty(y);
+    unsigned long duty_cycle;
+    duty_cycle=SinAmp[index];
+    set_pwm1_duty(duty_cycle);
 }
 
 

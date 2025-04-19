@@ -4,31 +4,53 @@
  *
  * Created on February 26, 2023, 11:37 AM
  */
-
 #ifndef main_H
 #include <16F690.h>
+#device ADC=8
 #include <math.h>
 #define main_H
 #fuses HS
 #fuses NOPROTECT
 #fuses BROWNOUT
 #fuses NOWDT
+#fuses NOMCLR
 #case
 #define AMP 127
+//#define AMP_MAX 255
+#define ADC_MAX 255
 #define SIN_SAMPLES 32
 #define SIN16_SAMPLES 16
 #define TIMER2_PERIOD 255
 #define MCU_FREQ_MHZ 2500000
 #define T1_PRESCALER 1
+#define PTT_ON 1
+#define PTT_OFF 0
 // Timer1 latency consumes 4 instructions from 
 // T1_disable to T1 re-enabled.
-#define TIMER1_LATENCY 24
+// Latency=28 is trimmed to work for 100Hz tone.
+#define TIMER1_LATENCY 28
+#define AMPLITUDE_CHANNEL 10
+#define AMPLITUDE_PORT sAN10
+
 #use delay (clock=10MHz,crystal=10MHz)
 #use fast_io(A)
 #use fast_io(B)
 #use fast_io(C)
+#use rs232(uart1,baud=9600)
 
-const unsigned int8 SinTable16[] ={ 
+enum state_enum {
+    idle,
+    tone_start,
+    tone_on,
+    tone_tail,
+} state;
+
+unsigned long SinAmp[32];
+void updateSinAmpTable(void);
+void getAmplitude(void);
+void debug(unsigned int line,char* str);
+
+const unsigned int SinTable16[] ={ 
     AMP * 0,
     AMP * 0.2,
     AMP * 0.38,
@@ -46,25 +68,42 @@ const unsigned int8 SinTable16[] ={
     AMP * 0.38,
     AMP * 0.20};
 
+void start_tone(void);
+void stop_tone(void);
 unsigned int sint( unsigned int& v);
 void set_ctcss_period(unsigned int& p);
-unsigned int16 d_val;
-unsigned int16 t1_val;
-unsigned int8 increment;
+unsigned long d_val;
+unsigned long t1_val;
+unsigned int increment;
+unsigned long tail_counter;
+unsigned int amplitude;
+//unsigned int sin_index = 0;
+short rtc_flag = 0;
+
 //unsigned int16 update_dc_count;
-unsigned int8 ctcss_sel;
-int1 enableCTCSS;
-int1 reverseBurst;
-int1 RBFlag;
-#define ENABLE_CTCSS_PIN PIN_B4
-#define REVERSE_BURST_PIN PIN_B5
+unsigned int ctcss_sel;
+short ptt_in;
+short reverseBurst;
+short toneDisable;
+//int1 RBFlag;
+short ctcss_on;
+//#define ENABLE_CTCSS_PIN PIN_B4
+short ADC_FLAG;
+#define REVERSE_BURST PIN_C7
+#define TONE_DISABLE_PIN PIN_A3 
+#define PTT_IN PIN_C4
+#define PTT_OUT PIN_C3
+// Need between 150 and 200ms
+// Decrement occurs every 44us
+#define TAIL_DURATION_MS 150
+//#define REVERSE_BURST_COUNTER_MAX (150/44)*1000
 
 void initialize(void);
 
 // Timer1 values for each CTCSS frequency when running at
 // FOSC = 10MHz
 
-const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
+const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,    	// 0 (1166)
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/69.3,	 	// 1
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/71.9,		// 2
@@ -109,6 +148,6 @@ const unsigned int16 CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (307.5)
 };
 
-const unsigned int8 ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
+const unsigned int ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
 #endif
 
