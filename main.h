@@ -31,6 +31,10 @@
 #define TIMER1_LATENCY 28
 #define AMPLITUDE_CHANNEL 10
 #define AMPLITUDE_PORT sAN10
+#byte OSCCON=0x8F
+#bit OSTS=0x8F.3
+#bit SCS=0x8F.0
+#byte CONFIG=0x2007
 
 #use delay (clock=10MHz,crystal=10MHz)
 #use fast_io(A)
@@ -85,6 +89,8 @@ unsigned int ctcss_sel;
 short ptt_in;
 short reverseBurst;
 short toneDisable;
+short masterEnable;
+short CLOCK_FAIL_FLAG;
 //int1 RBFlag;
 short ctcss_on;
 //#define ENABLE_CTCSS_PIN PIN_B4
@@ -93,6 +99,8 @@ short ADC_FLAG;
 #define TONE_DISABLE_PIN PIN_A3 
 #define PTT_IN PIN_C4
 #define PTT_OUT PIN_C3
+#define TONE_OUT_PIN PIN_C5
+#define MASTER_ENABLE_PIN PIN_B5
 // Need between 150 and 200ms
 // Decrement occurs every 44us
 #define TAIL_DURATION_MS 150

@@ -9,6 +9,10 @@ void timer1_isr(void) {
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
     rtc_flag = 1;
 }
+#INT_OSC_FAIL
+void clock_fail(void) {
+    CLOCK_FAIL_FLAG=1;
+}
 
 #INT_AD
 void read_adc(void) {
@@ -26,12 +30,12 @@ void read_adc(void) {
 void
 main() {
     initialize();
-    unsigned int sin_index;
+    unsigned int sin_index=0;
     while (1) {
         ptt_in      = (input(PTT_IN)==0); // Active low pin
-        //toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
+        toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
         // Disconnect TD - Simplify PIC programming.
-        toneDisable = 0;
+        //toneDisable = 0;
         switch(state) {
             case idle:
                 if(ptt_in) {
@@ -49,15 +53,16 @@ main() {
             case tone_on:
                 if(!ptt_in) {
                     reverseBurst = (input(REVERSE_BURST)==0); // ActiveLow pin
-                    if ( ~reverseBurst) {
-                      stop_tone();
+                    // DEBUG
+                    //reverseBurst=1;
+                    if ( !reverseBurst) {
+                        stop_tone();
                     }
                     tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
                     state=tone_tail;
                 }
                 break;
             case tone_tail:
-                //output_bit(PTT_OUT, PTT_OFF); // Test??? Remove
                 if (tail_counter==0) {
                     output_bit(PTT_OUT, PTT_OFF);
                     stop_tone();
@@ -105,23 +110,57 @@ void getAmplitude(void) {
 
 void start_tone(void) {
     unsigned int dip_val;
+    masterEnable = (input(MASTER_ENABLE_PIN)==0);
     dip_val = (~input_c() & 0x07)<<3;
     ctcss_sel = dip_val;
     dip_val = ~input_a()&0x07;
     ctcss_sel += dip_val;
-    char tone_str[20];
-    sprintf(tone_str"ToneSel=<%d>  ",ctcss_sel);
-    debug(1,tone_str);
-    //
-    // DEBUG val.
-    //       
+    char debug_str[20];
+
+    // Check clock
+//    if (setup_oscillator()!=OSC_STATE_STABLE) {
+//        sprintf(debug_str,"!CLK");
+//        debug(4,debug_str);
+//        setup_oscillator(OSC_NORMAL,0);
+//    } else {
+//        sprintf(debug_str," CLK");
+//        debug(4,debug_str);
+//    }
+    putc(6); // Clear LCD
+    putc(4); // Go to line 4.
+    if (CLOCK_FAIL_FLAG) {
+        CLOCK_FAIL_FLAG=0;
+        sprintf(debug_str,":INT!");
+        debug(0,debug_str);
+    } else {
+        sprintf(debug_str,":OK");
+        debug(0,debug_str);
+    }
+    if (OSTS) {
+        sprintf(debug_str,"OSTS");
+        debug(0,debug_str);
+        OSTS=0;
+    } else {
+        sprintf(debug_str,"!OSTS");
+        debug(0,debug_str);
+    }
+    if (SCS) {
+        sprintf(debug_str,"SCS");
+        debug(0,debug_str);
+    } else {
+        sprintf(debug_str,"!SCS");
+        debug(0,debug_str);
+    }
+  
+    sprintf(debug_str,"ToneSel=<%d>  ",ctcss_sel);
+    debug(1,debug_str);
     if (ctcss_sel > ctcss_table_size) {
         ctcss_sel = 12; // set to 100Hz by default
     }
     if (ctcss_sel < 37) {
         increment = 1;
     } else {
-                // Starting at ctcss[37], the MCU is too slow
+        // Starting at ctcss[37], the MCU is too slow
         // Run the sine wave twice as fast.
         increment = 2;
     }
@@ -132,10 +171,10 @@ void start_tone(void) {
     d_val = CTCSS_T1_FREQ[ctcss_sel];
     t1_val = (2^16) - d_val + (unsigned long)TIMER1_LATENCY;
     
-    sprintf(tone_str"DelayVal=<%Lu>  ",d_val);
-    debug(2,tone_str);
-    sprintf(tone_str"Timer1=<%Lu>  ",t1_val);
-    debug(3,tone_str);
+    sprintf(debug_str,"DelayVal=<%Lu>  ",d_val);
+    debug(2,debug_str);
+    sprintf(debug_str,"Timer1=<%Lu>  ",t1_val);
+    debug(3,debug_str);
 
     if ( ! toneDisable ) {
       setup_ccp1(CCP_PWM);
@@ -143,13 +182,16 @@ void start_tone(void) {
 }
 void stop_tone(void) {
     setup_ccp1(CCP_OFF);
+    output_bit(TONE_OUT_PIN,0);
 }
 
 void
 initialize(void) {
+    CLOCK_FAIL_FLAG=0;
     setup_ccp1(CCP_OFF);
     setup_timer_2(T2_DIV_BY_4, 255, 1);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
+    enable_interrupts(INT_OSC_FAIL);
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
     set_tris_b(0xF0); // Not used
@@ -160,8 +202,8 @@ initialize(void) {
     read_adc(ADC_START_ONLY);
     state=idle;
     amplitude=255;
+    masterEnable=1;
     output_bit(PTT_OUT, PTT_OFF);
-    
     char tone_str[20];
     sprintf(tone_str"Hello!");
     debug(4,tone_str);
