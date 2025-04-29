@@ -1,6 +1,4 @@
 #include "main.h"
-//#include <math.h>
-
 
 #INT_TIMER1
 void timer1_isr(void) {
@@ -99,9 +97,9 @@ void debug(unsigned int line,char* str) {
 }
 
 void getAmplitude(void) {
-    unsigned long new_amplitude;
+    unsigned int new_amplitude;
     new_amplitude = read_adc(ADC_READ_ONLY);
-    if ( new_amplitude != amplitude) {
+    if ( abs((int)new_amplitude-(int)amplitude) > 3 ) {
         updateSinAmpTable();
         amplitude = new_amplitude;
     }

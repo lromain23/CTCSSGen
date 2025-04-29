@@ -8,6 +8,7 @@
 #include <16F690.h>
 #device ADC=8
 #include <math.h>
+#include <stdlib.h>
 #define main_H
 #fuses HS
 #fuses NOPROTECT
