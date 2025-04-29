@@ -56,7 +56,8 @@ main() {
                     if ( !reverseBurst) {
                         stop_tone();
                     }
-                    tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
+                    tail_counter = tailCounterMax[ctcss_sel];
+                    //tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
                     state=tone_tail;
                 }
                 break;

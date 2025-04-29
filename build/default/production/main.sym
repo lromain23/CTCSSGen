@@ -1,7 +1,7 @@
 004-005 @READ_PROGRAM_MEMORY8.P1
 004-005 @WRITE_PROGRAM_MEMORY8.P2
-015     CCP_1_LOW
 015     CCP_1
+015     CCP_1_LOW
 016     CCP_1_HIGH
 020     @SCRATCH
 021     @SCRATCH
@@ -16,57 +16,140 @@
 029     @INTERRUPT_AREA
 02A     @INTERRUPT_AREA
 02B     @INTERRUPT_AREA
-02C-02D d_val
-02E-02F t1_val
-030     increment
-031     ctcss_sel
-032.0   enableCTCSS
-032.1   reverseBurst
-032.2   RBFlag
-032.3   rtc_flag
-033     sin_index
-034     main.x
-034-037 atan2.y
-035     set_ctcss_period.y
-035     main.@SCRATCH1
-036     main.@SCRATCH2
-037     sint.angle
-037-038 @MUL1616.P1
-038     sint.index
-038-03B atan2.x
-039-03A @MUL1616.P1
-03B     @MUL1616.@SCRATCH1
-03C-03F atan2.z
-040.0   atan2.sign
-041     atan2.quad
+02C-02D strtok.save
+02E-031 _Randseed
+032     state
+033-072 SinAmp
+073-074 d_val
+075-076 t1_val
+077     increment
+078-079 tail_counter
+07A     amplitude
+07B.0   rtc_flag
+07B.1   ptt_in
+07B.2   reverseBurst
+07B.3   toneDisable
+07B.4   masterEnable
+07B.5   CLOCK_FAIL_FLAG
+07B.6   ctcss_on
+07B.7   ADC_FLAG
+07C     ctcss_sel
+07D-07E @sprintf_string
+08F.0   SCS
+08F     OSCCON
+08F.3   OSTS
+0A0-0A3 atan2.y
+0A0     main.sin_index
+0A1     getAmplitude.new_amplitude
+0A1-0A2 set_ctcss_period.duty_cycle
+0A1-0B4 initialize.tone_str
+0A1     start_tone.dip_val
+0A1     main.@SCRATCH1
+0A2-0B5 start_tone.debug_str
+0A2     updateSinAmpTable.x
+0A2     getAmplitude.@SCRATCH1
+0A3-0A4 updateSinAmpTable.duty_cycle
+0A4-0A7 atan2.x
+0A5     sint.angle
+0A5     updateSinAmpTable.@SCRATCH1
+0A6     sint.index
+0A6     updateSinAmpTable.@SCRATCH2
+0A7-0A8 @MUL1616.P1
+0A8-0AB atan2.z
+0A9-0AA @MUL1616.P1
+0AB     @MUL1616.@SCRATCH1
+0AC.0   atan2.sign
+0AD     atan2.quad
+0B6-0B7 @PRINTF_LU_531.P1
+0B6     @PSTRINGCN7_531.P2
+0B6     debug.line
+0B6     @PRINTF_D_531.P1
+0B6     start_tone.@SCRATCH1
+0B6     @PSTRINGC7_531.@SCRATCH1
+0B7-0B8 debug.str
+0B7     @PRINTF_D_531.P1
+0B7     start_tone.@SCRATCH2
+0B7     @PSTRINGC7_531.@SCRATCH2
+0B7     @PSTRINGCN7_531.@SCRATCH1
+0B8     @PSTRINGC7_531.@SCRATCH3
+0B8     @PSTRINGCN7_531.@SCRATCH2
+0B8     @PRINTF_D_531.@SCRATCH1
+0B8     @PRINTF_LU_531.@SCRATCH1
+0B9     @PSTRINGR_9600_55_53.@SCRATCH1
+0B9     @PSTRINGC7_531.@SCRATCH4
+0B9     @PSTRINGCN7_531.@SCRATCH3
+0B9     @PRINTF_D_531.@SCRATCH2
+0B9     @PRINTF_LU_531.@SCRATCH2
+0BA     @PSTRINGR_9600_55_53.@SCRATCH2
+0BA     @PSTRINGCN7_531.@SCRATCH4
+0BA     @PRINTF_D_531.@SCRATCH3
+0BA     @PRINTF_LU_531.@SCRATCH3
+0BB     @PRINTF_D_531.@SCRATCH4
+0BB     @PRINTF_LU_531.@SCRATCH4
+0BC     @DIV88.P1
+0BC     @PRINTF_LU_531.@SCRATCH5
+0BD     @DIV88.P1
+0BD     @PRINTF_LU_531.@SCRATCH6
+0BE     @DIV88.@SCRATCH1
+0BE     @PRINTF_LU_531.@SCRATCH7
+0BF     @SPRINTF.P1
 10D-10E @WRITE_PROGRAM_MEMORY8.P1
 10D-10E @READ_PROGRAM_MEMORY8.P2
 11B.6   C2OUT
 11B.7   C1OUT
 
 ROM Allocation:
-000039  SinTable16
-00004D  CTCSS_T1_FREQ
-0000A5  timer1_isr
-0000B1  int_rb_isr
-0000DB  main
-0000BB  initialize
-000159  sint
-000159  set_ctcss_period
-000174  @MUL1616
-0000DB  @cinit1
-0000F3  @cinit2
+000540  @MUL1616
+000043  SinTable16
+000057  CTCSS_T1_FREQ
+0000AF  tailCounterMax
+00010A  timer1_isr
+000115  clock_fail
+000119  read_adc
+000588  main
+000633  @goto11731
+0001BB  debug
+0001C7  @PSTRINGR_9600_55_53
+00050B  getAmplitude
+00032C  start_tone
+00011D  @const529
+000146  @SPRINTF
+000155  @PSTRINGC7_531
+000120  @const535
+000123  @const536
+000126  @const538
+000129  @const539
+00022E  @PSTRINGCN7_531
+00029A  @DIV88
+0003E8  @PRINTF_D_531
+000131  @const548
+0002BB  @PRINTF_LU_531
+00013A  @const551
+000507  stop_tone
+0001E4  initialize
+000142  @const553
+00051C  sint
+000517  updateSinAmpTable
+00060C  set_ctcss_period
+000588  @cinit1
+0005AA  @cinit2
+0136  StrtoulGO
+0136  StrtolGO
 
 Project Directory:
     C:\Users\m3n2bn\MPLABXProjects\CTCSSGen.X\
 
 Project Files:
-    main.c                                                  [06-Mar-25 11:36  CRC=02976A0F]
-    main.h                                                  [27-May-23 18:53  CRC=FC824A27]
-    ..\..\..\..\Program Files (x86)\PICC\devices\16F690.h   [30-Nov-12 17:59  CRC=46D65B97]
-    ..\..\..\..\Program Files (x86)\PICC\drivers\math.h     [28-Sep-12 10:35  CRC=546412C9]
+    main.c                                                  [28-Apr-25 20:38  CRC=7607148E]
+    main.h                                                  [28-Apr-25 20:46  CRC=78C5037A]
+    ..\..\..\..\Program Files (x86)\PICC\devices\16F690.h   [30-Nov-12 18:59  CRC=46D65B97]
+    ..\..\..\..\Program Files (x86)\PICC\drivers\math.h     [28-Sep-12 11:35  CRC=546412C9]
+    ..\..\..\..\Program Files (x86)\PICC\drivers\stdlib.h   [08-Jun-11 14:39  CRC=0B6669CF]
+    ..\..\..\..\Program Files (x86)\PICC\drivers\stddef.h   [16-Jul-10 09:27  CRC=897CEC6C]
+    ..\..\..\..\Program Files (x86)\PICC\drivers\string.h   [14-Jul-11 10:13  CRC=23EDEC8F]
+    ..\..\..\..\Program Files (x86)\PICC\drivers\ctype.h    [03-Jan-08 13:55  CRC=2D1F019F]
 
-Source signature=EEB8355F
+Source signature=9D15CC70
 
 Units:
     main (main)

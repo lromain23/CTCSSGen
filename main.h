@@ -157,6 +157,16 @@ const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (307.5)
 };
 
+// Counter Delay Equation:
+// 4.8  (67.794 + 1.9447 ctcss_sel + 0.0657 )
+// Note that starting with tone 37, the delay must be divided by 2.
+const unsigned long tailCounterMax[] = {325, 335, 345, 356, 367, 379, \
+392, 406, 420, 434, 450, 466, 482, \
+500, 517, 536, 555, 575, 595, 616, 638, 660, 683, 706, 731, 755, 781, \
+807, 834, 861, 889, 917, 947, 976, 1007, 1038, \
+1070, 551, 568, 585, 602, 619};
+//1070, 1102, 1135, 1169, 1203, 1238};
+
 const unsigned int ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
 #endif
 
