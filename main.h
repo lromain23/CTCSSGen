@@ -4,6 +4,7 @@
  *
  * Created on February 26, 2023, 11:37 AM
  */
+#opt compress
 #ifndef main_H
 #include <16F690.h>
 #device ADC=8
@@ -16,41 +17,55 @@
 #fuses NOWDT
 #fuses NOMCLR
 #case
+#byte T1CON = 0x10
+#byte TMR1L = 0x0E
+#byte TMR1H = 0x0F
+#byte PIR1 = 0x0C
+#bit TMR1IF = PIR1.0
+#bit TMR1ON = T1CON.0
 #define AMP 127
 //#define AMP_MAX 255
 #define ADC_MAX 255
 #define SIN_SAMPLES 32
 #define SIN16_SAMPLES 16
+#define SIN8_SAMPLES 8
 #define TIMER2_PERIOD 255
 #define MCU_FREQ_MHZ 2500000
 #define T1_PRESCALER 1
+#define TIMER1_TICKS(freq, samples) ((unsigned long)(MCU_FREQ_MHZ/(samples)/T1_PRESCALER/(freq) + 0.5))
 #define PTT_ON 1
 #define PTT_OFF 0
-// Timer1 latency consumes 4 instructions from 
-// T1_disable to T1 re-enabled.
-// Latency=28 is trimmed to work for 100Hz tone.
-#define TIMER1_LATENCY 28
+// ISR entry/exit and reload overhead is fundamentally fixed.
+// Keep one base latency and use an optional path trim only if measured.
+#define TIMER1_ISR_BASE_LATENCY 0
+#define TIMER1_PATH_TRIM (ctcss_sel >= 42 ? 0 : (ctcss_sel >= 37 ? 0 : 28))
+#define TIMER1_LATENCY (TIMER1_ISR_BASE_LATENCY + TIMER1_PATH_TRIM)
 #define AMPLITUDE_CHANNEL 10
 #define AMPLITUDE_PORT sAN10
 #byte OSCCON=0x8F
 #bit OSTS=0x8F.3
 #bit SCS=0x8F.0
-#byte CONFIG=0x2007
+//#byte CONFIG=0x2007
 
-#use delay (clock=10MHz,crystal=10MHz)
+#use delay (clock=20MHz,crystal=20MHz)
 #use fast_io(A)
 #use fast_io(B)
 #use fast_io(C)
 #use rs232(uart1,baud=9600)
 
-enum state_enum {
-    idle,
-    tone_start,
-    tone_on,
-    tone_tail,
-} state;
+#define STATE_IDLE       0
+#define STATE_TONE_START 1
+#define STATE_TONE_ON    2
+#define STATE_TONE_TAIL  3
+//enum state_enum {
+//    idle,
+//    tone_start,
+//    tone_on,
+//    tone_tail,
+//};
 
 unsigned long SinAmp[32];
+unsigned long SinAmp8[8];
 void updateSinAmpTable(void);
 void getAmplitude(void);
 void debug(unsigned int line,char* str);
@@ -82,7 +97,7 @@ unsigned long t1_val;
 unsigned int increment;
 unsigned long tail_counter;
 unsigned int amplitude;
-//unsigned int sin_index = 0;
+unsigned int sin_index = 0;
 short rtc_flag = 0;
 
 //unsigned int16 update_dc_count;
@@ -93,7 +108,7 @@ short toneDisable;
 short masterEnable;
 short CLOCK_FAIL_FLAG;
 //int1 RBFlag;
-short ctcss_on;
+//short ctcss_on;
 //#define ENABLE_CTCSS_PIN PIN_B4
 short ADC_FLAG;
 #define REVERSE_BURST PIN_C7
@@ -149,13 +164,18 @@ const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/206.5,	// 33
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/210.7,	// 34
     MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/218.1,	// 35
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36 (346))
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/229.1,	// 37
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/233.6,	// 38
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/241.8,	// 39
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (307.5)
+    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36 (346)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/229.1,	// 37 (682)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/233.6,	// 38 (670)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/241.8,	// 39 (646)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40 (624)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (615)
+    TIMER1_TICKS(1950, SIN8_SAMPLES),  // 42 (160)
+    TIMER1_TICKS(2175, SIN8_SAMPLES)   // 43 (144)  --> 28.7us (got 41us, 205 cycles)
 };
+
+#define CTCSS_SEL_DEBUG 43
+#define AMPLITUDE_DEBUG 511
 
 // Counter Delay Equation:
 // 4.8  (67.794 + 1.9447 ctcss_sel + 0.0657 )

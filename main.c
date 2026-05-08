@@ -2,10 +2,19 @@
 
 #INT_TIMER1
 void timer1_isr(void) {
-    setup_timer_1(T1_DISABLED);
-    set_timer1(t1_val);
-    setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
+    TMR1ON = 0;
+    TMR1H = t1_val >> 8;
+    TMR1L = t1_val & 0xFF;
+    TMR1ON = 1;
+    if (reverseBurst) {
+        sin_index = (sin_index - increment) & 0x1F;
+    } else {
+        sin_index = (sin_index + increment) & 0x1F;
+    }
+    set_ctcss_period(sin_index);
+    if (tail_counter) tail_counter--;
     rtc_flag = 1;
+    TMR1IF = 0;
 }
 #INT_OSC_FAIL
 void clock_fail(void) {
@@ -16,7 +25,7 @@ void clock_fail(void) {
 void read_adc(void) {
     // Every 44uS
     ADC_FLAG=1;
-    //clear_interrupt(INT_AD);
+    clear_interrupt(INT_AD);
 }
 //#INT_RB
 
@@ -25,30 +34,31 @@ void read_adc(void) {
  //   RBFlag = 1;
 //}
 
-void
-main() {
+void main() {
     initialize();
-    unsigned int sin_index=0;
+    unsigned state=STATE_IDLE;
     while (1) {
         ptt_in      = (input(PTT_IN)==0); // Active low pin
         toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
         // Disconnect TD - Simplify PIC programming.
         //toneDisable = 0;
         switch(state) {
-            case idle:
+            case STATE_IDLE:
+                getAmplitude();
+                updateSinAmpTable();
                 if(ptt_in) {
-                    state=tone_start;
+                    state=STATE_TONE_START;
                 }
                 //output_bit(PTT_OUT, PTT_OFF);
                 break;
-            case tone_start:
+            case STATE_TONE_START:
                 reverseBurst = 0;
                 start_tone();
                 enable_interrupts(INT_TIMER1);
                 output_bit(PTT_OUT, PTT_ON);
-                state=tone_on;
+                state=STATE_TONE_ON;
                 break;
-            case tone_on:
+            case STATE_TONE_ON:
                 if(!ptt_in) {
                     reverseBurst = (input(REVERSE_BURST)==0); // ActiveLow pin
                     // DEBUG
@@ -58,34 +68,23 @@ main() {
                     }
                     tail_counter = tailCounterMax[ctcss_sel];
                     //tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
-                    state=tone_tail;
+                    state=STATE_TONE_TAIL;
                 }
                 break;
-            case tone_tail:
+            case STATE_TONE_TAIL:
                 if (tail_counter==0) {
                     output_bit(PTT_OUT, PTT_OFF);
                     stop_tone();
                     disable_interrupts(INT_TIMER1);
-                    state=idle;
+                    state=STATE_IDLE;
                 }
                 if (ptt_in) {
-                    state=tone_start;
+                    state=STATE_TONE_START;
                 }
                 break;
         }
         if (rtc_flag) {
             rtc_flag=0;
-            if (reverseBurst) {
-                sin_index = (sin_index - increment)&0x1F;
-            } else {
-                sin_index = (sin_index + increment)&0x1F;
-            }
-            if ( tail_counter ) {
-                tail_counter--;      
-            }
-            // RESULT OF Y OVERFLOWS!!!
-            // Sin varies from 0 to 2*127
-            set_ctcss_period(sin_index);
             getAmplitude();
         }
 
@@ -104,6 +103,10 @@ void getAmplitude(void) {
         updateSinAmpTable();
         amplitude = new_amplitude;
     }
+    // Luc -- Debug
+#ifdef AMPLITUDE_DEBUG
+    amplitude = AMPLITUDE_DEBUG;
+#endif
     read_adc(ADC_START_ONLY);
 }
 
@@ -114,6 +117,9 @@ void start_tone(void) {
     ctcss_sel = dip_val;
     dip_val = ~input_a()&0x07;
     ctcss_sel += dip_val;
+#ifdef CTCSS_SEL_DEBUG
+    ctcss_sel = CTCSS_SEL_DEBUG;
+#endif
     char debug_str[20];
 
     // Check clock
@@ -153,22 +159,25 @@ void start_tone(void) {
   
     sprintf(debug_str,"ToneSel=<%d>  ",ctcss_sel);
     debug(1,debug_str);
-    if (ctcss_sel > ctcss_table_size) {
+    if (ctcss_sel >= ctcss_table_size) {
         ctcss_sel = 12; // set to 100Hz by default
     }
     if (ctcss_sel < 37) {
         increment = 1;
-    } else {
+    } else if (ctcss_sel < 42) {
         // Starting at ctcss[37], the MCU is too slow
         // Run the sine wave twice as fast.
         increment = 2;
+    } else {
+        increment = 4;
     }
     //
     // CTCSS tones range from 0-->67Hz to 41-->254.1 Tail must be 150ms.
     //
     // 0.4ms --> 0.123ms
     d_val = CTCSS_T1_FREQ[ctcss_sel];
-    t1_val = (2^16) - d_val + (unsigned long)TIMER1_LATENCY;
+    // Timer1 is 16-bit; use an explicit reload base to avoid operator ambiguity.
+    t1_val = 65536UL - d_val - (unsigned long)TIMER1_LATENCY;
     
     sprintf(debug_str,"DelayVal=<%Lu>  ",d_val);
     debug(2,debug_str);
@@ -178,10 +187,13 @@ void start_tone(void) {
     if ( ! toneDisable ) {
       setup_ccp1(CCP_PWM);
     }
+    disable_interrupts(INT_AD);
 }
 void stop_tone(void) {
     setup_ccp1(CCP_OFF);
     output_bit(TONE_OUT_PIN,0);
+    enable_interrupts(INT_AD);
+    read_adc(ADC_START_ONLY);
 }
 
 void
@@ -199,13 +211,13 @@ initialize(void) {
     setup_adc_ports(AMPLITUDE_PORT);
     set_adc_channel(AMPLITUDE_CHANNEL);
     read_adc(ADC_START_ONLY);
-    state=idle;
+    sin_index = 0;
     amplitude=255;
     masterEnable=1;
     output_bit(PTT_OUT, PTT_OFF);
-    char tone_str[20];
-    sprintf(tone_str"Hello!");
-    debug(4,tone_str);
+//    char tone_str[20];
+    //sprintf(tone_str,"Hello!");
+    //debug(4,tone_str);
 }
 
 // Second time inside set_ctcss_period
@@ -233,11 +245,18 @@ void updateSinAmpTable(void) {
         duty_cycle = (unsigned long)(4*(TIMER2_PERIOD+1)/(2*(AMP+1))*((unsigned long)sint(x)*amplitude/(ADC_MAX+1)));
         SinAmp[x] = duty_cycle;
     }
+    for(x=0;x<8;x++) {
+        SinAmp8[x] = SinAmp[x*4];
+    }
 }
 void set_ctcss_period(unsigned int& index) {
     // p is CTCSS period
     unsigned long duty_cycle;
-    duty_cycle=SinAmp[index];
+    if (ctcss_sel >= 42) {
+        duty_cycle = SinAmp8[index >> 2];
+    } else {
+        duty_cycle = SinAmp[index];
+    }
     set_pwm1_duty(duty_cycle);
 }
 

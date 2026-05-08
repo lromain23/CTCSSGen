@@ -2,3 +2,5 @@
 *.err
 *.mk
 *.swp
+/CTCSSToneBoard.X/dist/
+/CTCSSToneBoard.X/build/
