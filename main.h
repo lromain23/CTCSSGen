@@ -29,17 +29,16 @@
 #define SIN_SAMPLES 32
 #define SIN16_SAMPLES 16
 #define SIN8_SAMPLES 8
-#define TIMER2_PERIOD 255
-#define MCU_FREQ_MHZ 2500000
+#define TIMER2_PERIOD 63
+#define MCU_FREQ_MHZ 5000000
 #define T1_PRESCALER 1
 #define TIMER1_TICKS(freq, samples) ((unsigned long)(MCU_FREQ_MHZ/(samples)/T1_PRESCALER/(freq) + 0.5))
 #define PTT_ON 1
 #define PTT_OFF 0
 // ISR entry/exit and reload overhead is fundamentally fixed.
 // Keep one base latency and use an optional path trim only if measured.
-#define TIMER1_ISR_BASE_LATENCY 0
-#define TIMER1_PATH_TRIM (ctcss_sel >= 42 ? 0 : (ctcss_sel >= 37 ? 0 : 28))
-#define TIMER1_LATENCY (TIMER1_ISR_BASE_LATENCY + TIMER1_PATH_TRIM)
+// Latency was 28
+#define TIMER1_LATENCY 61
 #define AMPLITUDE_CHANNEL 10
 #define AMPLITUDE_PORT sAN10
 #byte OSCCON=0x8F
@@ -170,8 +169,8 @@ const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/241.8,	// 39 (646)
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40 (624)
     MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (615)
-    TIMER1_TICKS(1950, SIN8_SAMPLES),  // 42 (160)
-    TIMER1_TICKS(2175, SIN8_SAMPLES)   // 43 (144)  --> 28.7us (got 41us, 205 cycles)
+    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/1950,   // 41 (160))
+    MCU_FREQ_MHZ/SIN8_SAMPLES/T1_PRESCALER/2175   // 43 (144)  --> 57.47 (got 41us)
 };
 
 #define CTCSS_SEL_DEBUG 43

@@ -6,13 +6,6 @@ void timer1_isr(void) {
     TMR1H = t1_val >> 8;
     TMR1L = t1_val & 0xFF;
     TMR1ON = 1;
-    if (reverseBurst) {
-        sin_index = (sin_index - increment) & 0x1F;
-    } else {
-        sin_index = (sin_index + increment) & 0x1F;
-    }
-    set_ctcss_period(sin_index);
-    if (tail_counter) tail_counter--;
     rtc_flag = 1;
     TMR1IF = 0;
 }
@@ -84,8 +77,16 @@ void main() {
                 break;
         }
         if (rtc_flag) {
-            rtc_flag=0;
-            getAmplitude();
+            if (reverseBurst) {
+        sin_index = (sin_index - increment) & 0x1F;
+    } else {
+        sin_index = (sin_index + increment) & 0x1F;
+    }
+    set_ctcss_period(sin_index);
+    if (tail_counter) tail_counter--;
+
+          rtc_flag=0;
+            //getAmplitude();
         }
 
     }
@@ -177,7 +178,7 @@ void start_tone(void) {
     // 0.4ms --> 0.123ms
     d_val = CTCSS_T1_FREQ[ctcss_sel];
     // Timer1 is 16-bit; use an explicit reload base to avoid operator ambiguity.
-    t1_val = 65536UL - d_val - (unsigned long)TIMER1_LATENCY;
+    t1_val = 65536UL - (unsigned long)d_val + (unsigned long)TIMER1_LATENCY;
     
     sprintf(debug_str,"DelayVal=<%Lu>  ",d_val);
     debug(2,debug_str);
@@ -200,7 +201,7 @@ void
 initialize(void) {
     CLOCK_FAIL_FLAG=0;
     setup_ccp1(CCP_OFF);
-    setup_timer_2(T2_DIV_BY_4, 255, 1);
+    setup_timer_2(T2_DIV_BY_4, TIMER2_PERIOD, 1);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
     enable_interrupts(INT_OSC_FAIL);
     enable_interrupts(GLOBAL);
