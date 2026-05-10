@@ -38,7 +38,7 @@
 // ISR entry/exit and reload overhead is fundamentally fixed.
 // Keep one base latency and use an optional path trim only if measured.
 // Latency was 28
-#define TIMER1_LATENCY 61
+#define TIMER1_LATENCY 46
 #define AMPLITUDE_CHANNEL 10
 #define AMPLITUDE_PORT sAN10
 #byte OSCCON=0x8F
@@ -173,8 +173,8 @@ const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
     MCU_FREQ_MHZ/SIN8_SAMPLES/T1_PRESCALER/2175   // 43 (144)  --> 57.47us
 };
 
-#define CTCSS_SEL_DEBUG 42
-#define AMPLITUDE_DEBUG 511
+//#define CTCSS_SEL_DEBUG 43
+//#define AMPLITUDE_DEBUG 511
 
 // Counter Delay Equation:
 // TAIL_DURATION_MS/1000  * ctcss_freq * <pwm samples>

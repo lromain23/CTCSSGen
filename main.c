@@ -6,6 +6,15 @@ void timer1_isr(void) {
     TMR1H = t1_val >> 8;
     TMR1L = t1_val & 0xFF;
     TMR1ON = 1;
+                if (reverseBurst) {
+                sin_index = (sin_index - increment) & 0x1F;
+            } else {
+                sin_index = (sin_index + increment) & 0x1F;
+            }
+            //set_ctcss_period(sin_index);
+            unsigned long duty_cycle;
+            duty_cycle = SinAmp[sin_index];
+            set_pwm1_duty(duty_cycle);
     rtc_flag = 1;
     TMR1IF = 0;
 }
@@ -37,7 +46,8 @@ void main() {
         //toneDisable = 0;
         switch(state) {
             case STATE_IDLE:
-                getAmplitude();
+                //getAmplitude();
+                amplitude = read_adc(ADC_START_AND_READ);
                 updateSinAmpTable();
                 if(ptt_in) {
                     state=STATE_TONE_START;
@@ -75,15 +85,6 @@ void main() {
                 break;
         }
         if (rtc_flag) {
-            if (reverseBurst) {
-                sin_index = (sin_index - increment) & 0x1F;
-            } else {
-                sin_index = (sin_index + increment) & 0x1F;
-            }
-            //set_ctcss_period(sin_index);
-            unsigned long duty_cycle;
-            duty_cycle = SinAmp[sin_index];
-            set_pwm1_duty(duty_cycle);
             if (tail_counter) tail_counter--;
             rtc_flag=0;
         }
@@ -119,17 +120,8 @@ void start_tone(void) {
 #ifdef CTCSS_SEL_DEBUG
     ctcss_sel = CTCSS_SEL_DEBUG;
 #endif
+#ifdef ENABLE_LCD
     char debug_str[20];
-
-    // Check clock
-//    if (setup_oscillator()!=OSC_STATE_STABLE) {
-//        sprintf(debug_str,"!CLK");
-//        debug(4,debug_str);
-//        setup_oscillator(OSC_NORMAL,0);
-//    } else {
-//        sprintf(debug_str," CLK");
-//        debug(4,debug_str);
-//    }
     putc(6); // Clear LCD
     putc(4); // Go to line 4.
     if (CLOCK_FAIL_FLAG) {
@@ -157,6 +149,7 @@ void start_tone(void) {
     } 
     sprintf(debug_str,"ToneSel=<%d>  ",ctcss_sel);
     debug(1,debug_str);
+#endif
     if (ctcss_sel >= ctcss_table_size) {
         ctcss_sel = 12; // set to 100Hz by default
     }
@@ -176,12 +169,12 @@ void start_tone(void) {
     d_val = CTCSS_T1_FREQ[ctcss_sel];
     // Timer1 is 16-bit; use an explicit reload base to avoid operator ambiguity.
     t1_val = 65536UL - (unsigned long)d_val + (unsigned long)TIMER1_LATENCY;
-    
+#ifdef ENABLE_LCD
     sprintf(debug_str,"DelayVal=<%Lu>  ",d_val);
     debug(2,debug_str);
     sprintf(debug_str,"Timer1=<%Lu>  ",t1_val);
     debug(3,debug_str);
-
+#endif
     if ( ! toneDisable ) {
       setup_ccp1(CCP_PWM);
     }
@@ -240,9 +233,6 @@ void updateSinAmpTable(void) {
         duty_cycle = (unsigned long)(4*(TIMER2_PERIOD+1)/(2*(AMP+1))*((unsigned long)sint(x)*amplitude/(ADC_MAX+1)));
         SinAmp[x] = duty_cycle;
     }
-//    for(x=0;x<8;x++) {
-//        SinAmp8[x] = SinAmp[x*4];
-//    }
 }
 void set_ctcss_period(unsigned int& index) {
     // p is CTCSS period
@@ -255,5 +245,11 @@ void set_ctcss_period(unsigned int& index) {
     duty_cycle = SinAmp[index];
     set_pwm1_duty(duty_cycle);
 }
+//void set_ctcss_period(unsigned int& index) {
+//    // p is CTCSS period
+//    unsigned long duty_cycle;
+//    duty_cycle = SinAmp[index];
+//    set_pwm1_duty(duty_cycle);
+//}
 
 
