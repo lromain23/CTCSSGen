@@ -54,8 +54,6 @@ void main() {
             case STATE_TONE_ON:
                 if(!ptt_in) {
                     reverseBurst = (input(REVERSE_BURST)==0); // ActiveLow pin
-                    // DEBUG
-                    //reverseBurst=1;
                     if ( !reverseBurst) {
                         stop_tone();
                     }
@@ -78,17 +76,17 @@ void main() {
         }
         if (rtc_flag) {
             if (reverseBurst) {
-        sin_index = (sin_index - increment) & 0x1F;
-    } else {
-        sin_index = (sin_index + increment) & 0x1F;
-    }
-    set_ctcss_period(sin_index);
-    if (tail_counter) tail_counter--;
-
-          rtc_flag=0;
-            //getAmplitude();
+                sin_index = (sin_index - increment) & 0x1F;
+            } else {
+                sin_index = (sin_index + increment) & 0x1F;
+            }
+            //set_ctcss_period(sin_index);
+            unsigned long duty_cycle;
+            duty_cycle = SinAmp[sin_index];
+            set_pwm1_duty(duty_cycle);
+            if (tail_counter) tail_counter--;
+            rtc_flag=0;
         }
-
     }
 }
 
@@ -156,8 +154,7 @@ void start_tone(void) {
     } else {
         sprintf(debug_str,"!SCS");
         debug(0,debug_str);
-    }
-  
+    } 
     sprintf(debug_str,"ToneSel=<%d>  ",ctcss_sel);
     debug(1,debug_str);
     if (ctcss_sel >= ctcss_table_size) {
@@ -216,9 +213,6 @@ initialize(void) {
     amplitude=255;
     masterEnable=1;
     output_bit(PTT_OUT, PTT_OFF);
-//    char tone_str[20];
-    //sprintf(tone_str,"Hello!");
-    //debug(4,tone_str);
 }
 
 // Second time inside set_ctcss_period
@@ -246,18 +240,19 @@ void updateSinAmpTable(void) {
         duty_cycle = (unsigned long)(4*(TIMER2_PERIOD+1)/(2*(AMP+1))*((unsigned long)sint(x)*amplitude/(ADC_MAX+1)));
         SinAmp[x] = duty_cycle;
     }
-    for(x=0;x<8;x++) {
-        SinAmp8[x] = SinAmp[x*4];
-    }
+//    for(x=0;x<8;x++) {
+//        SinAmp8[x] = SinAmp[x*4];
+//    }
 }
 void set_ctcss_period(unsigned int& index) {
     // p is CTCSS period
     unsigned long duty_cycle;
-    if (ctcss_sel >= 42) {
-        duty_cycle = SinAmp8[index >> 2];
-    } else {
-        duty_cycle = SinAmp[index];
-    }
+//    if (ctcss_sel >= 42) {
+//        duty_cycle = SinAmp8[index >> 2];
+//    } else {
+//       duty_cycle = SinAmp[index];
+//   }
+    duty_cycle = SinAmp[index];
     set_pwm1_duty(duty_cycle);
 }
 
