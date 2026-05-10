@@ -19,7 +19,7 @@ endif
 endif
 
 # Environment
-MKDIR=gnumkdir -p
+MKDIR=mkdir -p
 RM=rm -f 
 MV=mv 
 CP=cp 
@@ -30,12 +30,12 @@ ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 IMAGE_TYPE=debug
 OUTPUT_SUFFIX=cof
 DEBUGGABLE_SUFFIX=cof
-FINAL_IMAGE=${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=${DISTDIR}/ToneBoard.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 else
 IMAGE_TYPE=production
 OUTPUT_SUFFIX=hex
 DEBUGGABLE_SUFFIX=cof
-FINAL_IMAGE=${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=${DISTDIR}/ToneBoard.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 endif
 
 ifeq ($(COMPARE_BUILD), true)
@@ -82,10 +82,10 @@ FIXDEPS=fixDeps
 ifneq ($(INFORMATION_MESSAGE), )
 	@echo $(INFORMATION_MESSAGE)
 endif
-	${MAKE}  -f nbproject/Makefile-default.mk ${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+	${MAKE}  -f nbproject/Makefile-default.mk ${DISTDIR}/ToneBoard.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
-MP_CC="C:\PROGRA~2\PICC\CCSCON.exe"
-MP_LD="C:\PROGRA~2\PICC\CCSCON.exe"
+
+
 sourceline.device=sourceline="\#device PIC16F690"
 sourceline.xccompat=sourceline="\#device ANSI" sourceline="\#device PASS_STRINGS=IN_RAM" sourceline="\#device CONST=READ_ONLY" sourceline="\#case" sourceline="\#TYPE SIGNED" sourceline="\#type INT=16, LONG=32"
 sourceline.gcccompat=sourceline="\#device ANSI" sourceline="\#device PASS_STRINGS=IN_RAM" sourceline="\#device CONST=READ_ONLY" sourceline="\#case" sourceline="\#TYPE SIGNED"
@@ -96,11 +96,11 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR} 
 ifeq (1,1) 
 	${MKDIR} ${DISTDIR} 
-	${MP_CC}  out="${OBJECTDIR}"  main.c +FM +DF +CC #__DEBUG=1 +ICD +Y=9 +EA +DF +LN +T +A +M +J +Z -P #__16F690=1 
-	@mv ${OBJECTDIR}/main.cof "${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.cof" 
-	@mv ${OBJECTDIR}/main.hex "${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.hex"
+	${MP_CC}  out="${OBJECTDIR}"  main.c +FM +EX +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P \#__16F690=1 
+	@mv ${OBJECTDIR}/main.cof "${DISTDIR}/ToneBoard.${IMAGE_TYPE}.cof" 
+	@mv ${OBJECTDIR}/main.hex "${DISTDIR}/ToneBoard.${IMAGE_TYPE}.hex"
 else 
-	${MP_CC}  out=""${OBJECTDIR}"" main.c +EXPORT +FM +DF +CC #__DEBUG=1 +ICD +Y=9 +EA +DF +LN +T +A +M +J +Z -P #__16F690=1 +EXPORTD="${OBJECTDIR}"  
+	${MP_CC}  out=""${OBJECTDIR}"" main.c +EXPORT +FM +EX +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P \#__16F690=1 +EXPORTD="${OBJECTDIR}"  
 	
 endif 
 	
@@ -109,11 +109,11 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR} 
 ifeq (1,1) 
 	${MKDIR} ${DISTDIR} 
-	${MP_CC}  out="${OBJECTDIR}"  main.c +FM +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P #__16F690=1 
-	@mv ${OBJECTDIR}/main.cof "${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.cof" 
-	@mv ${OBJECTDIR}/main.hex "${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.hex"
+	${MP_CC}  out="${OBJECTDIR}"  main.c +FM +EX +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P \#__16F690=1 
+	@mv ${OBJECTDIR}/main.cof "${DISTDIR}/ToneBoard.${IMAGE_TYPE}.cof" 
+	@mv ${OBJECTDIR}/main.hex "${DISTDIR}/ToneBoard.${IMAGE_TYPE}.hex"
 else 
-	${MP_CC}  out=""${OBJECTDIR}"" main.c +EXPORT +FM +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P #__16F690=1 +EXPORTD="${OBJECTDIR}"  
+	${MP_CC}  out=""${OBJECTDIR}"" main.c +EXPORT +FM +EX +DF +CC +Y=9 +EA +DF +LN +T +A +M +J +Z -P \#__16F690=1 +EXPORTD="${OBJECTDIR}"  
 	
 endif 
 	
@@ -122,22 +122,22 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: link
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
+${DISTDIR}/ToneBoard.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
 	${MKDIR} ${DISTDIR} 
 ifeq (1,1) 
 	
 else 
-	${MP_LD}   out="${DISTDIR}"  +FM +DF +CC LINK=CTCSSGen.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/main.o +Y=9 +EA +DF +LN +T +A +M +J +Z -P
+	${MP_LD}   out="${DISTDIR}"  +FM +EX +DF +CC LINK=ToneBoard.${IMAGE_TYPE}.hex=${OBJECTDIR}/main.o +Y=9 +EA +DF +LN +T +A +M +J +Z -P
 	
 endif 
 	
 else
-${DISTDIR}/CTCSSGen.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
+${DISTDIR}/ToneBoard.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	${MKDIR} ${DISTDIR} 
 ifeq (1,1) 
 	
 else 
-	${MP_LD}   out="${DISTDIR}"  +FM +DF +CC LINK=CTCSSGen.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/main.o +Y=9 +EA +DF +LN +T +A +M +J +Z -P
+	${MP_LD}   out="${DISTDIR}"  +FM +EX +DF +CC LINK=ToneBoard.${IMAGE_TYPE}.hex=${OBJECTDIR}/main.o +Y=9 +EA +DF +LN +T +A +M +J +Z -P
 	
 endif 
 	

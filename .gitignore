@@ -2,5 +2,7 @@
 *.err
 *.mk
 *.swp
-/CTCSSToneBoard.X/dist/
-/CTCSSToneBoard.X/build/
+dist/*
+build/*
+nbproject/*
+

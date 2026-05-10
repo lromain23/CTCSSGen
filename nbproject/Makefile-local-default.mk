@@ -14,24 +14,23 @@
 # You can invoke make with the values of the macros:
 # $ makeMP_CC="/opt/microchip/mplabc30/v3.30c/bin/pic30-gcc" ...  
 #
-SHELL=cmd.exe
-PATH_TO_IDE_BIN=C:/Program Files/Microchip/MPLABX/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/
+PATH_TO_IDE_BIN=/opt/microchip/mplabx/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/
 # Adding MPLAB X bin directory to path.
-PATH:=C:/Program Files/Microchip/MPLABX/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/:$(PATH)
+PATH:=/opt/microchip/mplabx/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/:$(PATH)
 # Path to java used to run MPLAB X when this makefile was created
-MP_JAVA_PATH="C:\Program Files\Microchip\MPLABX\v6.15\sys\java\zulu8.64.0.19-ca-fx-jre8.0.345-win_x64/bin/"
+MP_JAVA_PATH="/opt/microchip/mplabx/v6.15/sys/java/zulu8.64.0.19-ca-fx-jre8.0.345-linux_x64/bin/"
 OS_CURRENT="$(shell uname -s)"
-MP_CC="C:\PROGRA~2\PICC\CCSC.exe"
+MP_CC="/usr/bin/ccsc"
 # MP_CPPC is not defined
 # MP_BC is not defined
 # MP_AS is not defined
-MP_LD="C:\PROGRA~2\PICC\CCSC.exe"
+MP_LD="/usr/bin/ccsc"
 # MP_AR is not defined
-DEP_GEN=${MP_JAVA_PATH}java -jar "C:/Program Files/Microchip/MPLABX/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/extractobjectdependencies.jar"
-MP_CC_DIR="C:\PROGRA~2\PICC"
+DEP_GEN=${MP_JAVA_PATH}java -jar "/opt/microchip/mplabx/v6.15/mplab_platform/platform/../mplab_ide/modules/../../bin/extractobjectdependencies.jar"
+MP_CC_DIR="/usr/bin"
 # MP_CPPC_DIR is not defined
 # MP_BC_DIR is not defined
 # MP_AS_DIR is not defined
-MP_LD_DIR="C:\PROGRA~2\PICC"
+MP_LD_DIR="/usr/bin"
 # MP_AR_DIR is not defined
-DFP_DIR=C:/Users/m3n2bn/.mchp_packs/Microchip/PIC16Fxxx_DFP/1.2.33
+DFP_DIR=/home/luc/.mchp_packs/Microchip/PIC16Fxxx_DFP/1.8.167
