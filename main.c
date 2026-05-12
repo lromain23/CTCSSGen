@@ -6,15 +6,14 @@ void timer1_isr(void) {
     TMR1H = t1_val >> 8;
     TMR1L = t1_val & 0xFF;
     TMR1ON = 1;
-                if (reverseBurst) {
-                sin_index = (sin_index - increment) & 0x1F;
-            } else {
-                sin_index = (sin_index + increment) & 0x1F;
-            }
-            //set_ctcss_period(sin_index);
-            unsigned long duty_cycle;
-            duty_cycle = SinAmp[sin_index];
-            set_pwm1_duty(duty_cycle);
+    if (reverseBurst) {
+      sin_index = (sin_index - increment) & 0x1F;
+    } else {
+      sin_index = (sin_index + increment) & 0x1F;
+    }
+    unsigned long duty_cycle;
+    duty_cycle = SinAmp[sin_index];
+    set_pwm1_duty(duty_cycle);
     rtc_flag = 1;
     TMR1IF = 0;
 }
@@ -24,20 +23,14 @@ void clock_fail(void) {
 }
 
 #INT_AD
-void read_adc(void) {
-    // Every 44uS
+void read_adc_isr(void) {
     ADC_FLAG=1;
     clear_interrupt(INT_AD);
 }
-//#INT_RB
-
-//void int_rb_isr(void) {
-
- //   RBFlag = 1;
-//}
 
 void main() {
     initialize();
+	  unsigned adc_timer=0;
     unsigned state=STATE_IDLE;
     while (1) {
         ptt_in      = (input(PTT_IN)==0); // Active low pin
@@ -46,9 +39,6 @@ void main() {
         //toneDisable = 0;
         switch(state) {
             case STATE_IDLE:
-                //getAmplitude();
-                amplitude = read_adc(ADC_START_AND_READ);
-                updateSinAmpTable();
                 if(ptt_in) {
                     state=STATE_TONE_START;
                 }
@@ -56,6 +46,8 @@ void main() {
                 break;
             case STATE_TONE_START:
                 reverseBurst = 0;
+    			amplitude = read_adc(ADC_START_AND_READ);
+        		updateSinAmpTable();
                 start_tone();
                 enable_interrupts(INT_TIMER1);
                 output_bit(PTT_OUT, PTT_ON);
@@ -68,7 +60,6 @@ void main() {
                         stop_tone();
                     }
                     tail_counter = tailCounterMax[ctcss_sel];
-                    //tail_counter=2*(TAIL_DURATION_MS * 1000)/(21.1*ctcss_sel+400);
                     state=STATE_TONE_TAIL;
                 }
                 break;
@@ -88,6 +79,17 @@ void main() {
             if (tail_counter) tail_counter--;
             rtc_flag=0;
         }
+			  if ( adc_timer ) {
+					adc_timer--;
+				} else {
+					adc_timer=0xFF;
+                    getAmplitude();
+					read_adc(ADC_START_ONLY);
+				}
+     		if ( ADC_FLAG ) {
+					getAmplitude();
+					ADC_FLAG=0;
+				}
     }
 }
 
@@ -100,14 +102,13 @@ void getAmplitude(void) {
     unsigned int new_amplitude;
     new_amplitude = read_adc(ADC_READ_ONLY);
     if ( abs((int)new_amplitude-(int)amplitude) > 3 ) {
-        updateSinAmpTable();
         amplitude = new_amplitude;
+        updateSinAmpTable();
     }
     // Luc -- Debug
 #ifdef AMPLITUDE_DEBUG
     amplitude = AMPLITUDE_DEBUG;
 #endif
-    read_adc(ADC_START_ONLY);
 }
 
 void start_tone(void) {
@@ -184,7 +185,6 @@ void stop_tone(void) {
     setup_ccp1(CCP_OFF);
     output_bit(TONE_OUT_PIN,0);
     enable_interrupts(INT_AD);
-    read_adc(ADC_START_ONLY);
 }
 
 void
@@ -194,6 +194,7 @@ initialize(void) {
     setup_timer_2(T2_DIV_BY_4, TIMER2_PERIOD, 1);
     setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
     enable_interrupts(INT_OSC_FAIL);
+    enable_interrupts(INT_AD);
     enable_interrupts(GLOBAL);
     set_tris_a(0x2F);
     set_tris_b(0xF0); // Not used
@@ -208,7 +209,6 @@ initialize(void) {
     output_bit(PTT_OUT, PTT_OFF);
 }
 
-// Second time inside set_ctcss_period
 // Substracted once inside sint() below
 unsigned int sint(unsigned int& v) {
     // PSAMPLES = 32
@@ -234,22 +234,3 @@ void updateSinAmpTable(void) {
         SinAmp[x] = duty_cycle;
     }
 }
-void set_ctcss_period(unsigned int& index) {
-    // p is CTCSS period
-    unsigned long duty_cycle;
-//    if (ctcss_sel >= 42) {
-//        duty_cycle = SinAmp8[index >> 2];
-//    } else {
-//       duty_cycle = SinAmp[index];
-//   }
-    duty_cycle = SinAmp[index];
-    set_pwm1_duty(duty_cycle);
-}
-//void set_ctcss_period(unsigned int& index) {
-//    // p is CTCSS period
-//    unsigned long duty_cycle;
-//    duty_cycle = SinAmp[index];
-//    set_pwm1_duty(duty_cycle);
-//}
-
-
