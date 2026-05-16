@@ -66,6 +66,7 @@
 unsigned long SinAmp[32];
 //unsigned long SinAmp8[8];
 void updateSinAmpTable(void);
+void get_tone_sel(void);
 void getAmplitude(void);
 void debug(unsigned int line,char* str);
 

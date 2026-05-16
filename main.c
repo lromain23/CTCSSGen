@@ -30,16 +30,23 @@ void read_adc_isr(void) {
 
 void main() {
     initialize();
+		get_tone_sel();
 	  unsigned adc_timer=0;
     unsigned state=STATE_IDLE;
+	  int1 enable_tone;
     while (1) {
         ptt_in      = (input(PTT_IN)==0); // Active low pin
         toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
+			  if ( ctcss_sel > 41 ) {
+          enable_tone = ~ptt_in;
+			  } else {
+  				enable_tone = ptt_in;
+				}
         // Disconnect TD - Simplify PIC programming.
         //toneDisable = 0;
         switch(state) {
             case STATE_IDLE:
-                if(ptt_in) {
+                if(enable_tone) {
                     state=STATE_TONE_START;
                 }
                 //output_bit(PTT_OUT, PTT_OFF);
@@ -54,7 +61,7 @@ void main() {
                 state=STATE_TONE_ON;
                 break;
             case STATE_TONE_ON:
-                if(!ptt_in) {
+                if(!enable_tone) {
                     reverseBurst = (input(REVERSE_BURST)==0); // ActiveLow pin
                     if ( !reverseBurst) {
                         stop_tone();
@@ -70,7 +77,7 @@ void main() {
                     disable_interrupts(INT_TIMER1);
                     state=STATE_IDLE;
                 }
-                if (ptt_in) {
+                if (enable_tone) {
                     state=STATE_TONE_START;
                 }
                 break;
@@ -111,9 +118,8 @@ void getAmplitude(void) {
 #endif
 }
 
-void start_tone(void) {
+void get_tone_sel (void) {
     unsigned int dip_val;
-    masterEnable = (input(MASTER_ENABLE_PIN)==0);
     dip_val = (~input_c() & 0x07)<<3;
     ctcss_sel = dip_val;
     dip_val = ~input_a()&0x07;
@@ -121,6 +127,10 @@ void start_tone(void) {
 #ifdef CTCSS_SEL_DEBUG
     ctcss_sel = CTCSS_SEL_DEBUG;
 #endif
+}
+void start_tone(void) {
+    masterEnable = (input(MASTER_ENABLE_PIN)==0);
+	  get_tone_sel();
 #ifdef ENABLE_LCD
     char debug_str[20];
     putc(6); // Clear LCD
