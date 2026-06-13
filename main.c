@@ -1,21 +1,18 @@
 #include "main.h"
 
-#INT_TIMER1
-void timer1_isr(void) {
-    TMR1ON = 0;
-    TMR1H = t1_val >> 8;
-    TMR1L = t1_val & 0xFF;
-    TMR1ON = 1;
-    if (reverseBurst) {
-      sin_index = (sin_index - increment) & 0x1F;
-    } else {
-      sin_index = (sin_index + increment) & 0x1F;
-    }
+#INT_TIMER2
+void timer2_isr(void) {
+        if (reverseBurst) {
+            phase_accumulator -= phase_step;
+        } else {
+            phase_accumulator += phase_step;
+        }
+        sin_index = (phase_accumulator >> DDS_PHASE_TO_INDEX_SHIFT) & 0x1F;
     unsigned long duty_cycle;
     duty_cycle = SinAmp[sin_index];
     set_pwm1_duty(duty_cycle);
     rtc_flag = 1;
-    TMR1IF = 0;
+    clear_interrupt(INT_TIMER2);
 }
 #INT_OSC_FAIL
 void clock_fail(void) {
@@ -28,6 +25,18 @@ void read_adc_isr(void) {
     clear_interrupt(INT_AD);
 }
 
+static void updateSinAmpTableProtected(void) {
+    int1 timer2_int_was_enabled;
+    timer2_int_was_enabled = TMR2IE;
+    if (timer2_int_was_enabled) {
+        disable_interrupts(INT_TIMER2);
+    }
+    updateSinAmpTable();
+    if (timer2_int_was_enabled) {
+        enable_interrupts(INT_TIMER2);
+    }
+}
+
 void main() {
     initialize();
 		get_tone_sel();
@@ -38,7 +47,8 @@ void main() {
         ptt_in      = (input(PTT_IN)==0); // Active low pin
         toneDisable = (input(TONE_DISABLE_PIN)==0); // Active low pin
 			  if ( ctcss_sel > 41 ) {
-          enable_tone = ~ptt_in;
+                // COR Polarity is inverted for tones 1950Hz and 2175Hz. Invert PTT input for tone generation logic in this case.
+                enable_tone = ~ptt_in;
 			  } else {
   				enable_tone = ptt_in;
 				}
@@ -54,9 +64,9 @@ void main() {
             case STATE_TONE_START:
                 reverseBurst = 0;
     			amplitude = read_adc(ADC_START_AND_READ);
-        		updateSinAmpTable();
+	        	updateSinAmpTableProtected();
                 start_tone();
-                enable_interrupts(INT_TIMER1);
+                enable_interrupts(INT_TIMER2);
                 output_bit(PTT_OUT, PTT_ON);
                 state=STATE_TONE_ON;
                 break;
@@ -66,7 +76,7 @@ void main() {
                     if ( !reverseBurst) {
                         stop_tone();
                     }
-                    tail_counter = tailCounterMax[ctcss_sel];
+                    tail_counter = DDS_TAIL_COUNT_MAX;
                     state=STATE_TONE_TAIL;
                 }
                 break;
@@ -74,7 +84,7 @@ void main() {
                 if (tail_counter==0) {
                     output_bit(PTT_OUT, PTT_OFF);
                     stop_tone();
-                    disable_interrupts(INT_TIMER1);
+                    disable_interrupts(INT_TIMER2);
                     state=STATE_IDLE;
                 }
                 if (enable_tone) {
@@ -110,7 +120,7 @@ void getAmplitude(void) {
     new_amplitude = read_adc(ADC_READ_ONLY);
     if ( abs((int)new_amplitude-(int)amplitude) > 3 ) {
         amplitude = new_amplitude;
-        updateSinAmpTable();
+        updateSinAmpTableProtected();
     }
     // Luc -- Debug
 #ifdef AMPLITUDE_DEBUG
@@ -164,24 +174,9 @@ void start_tone(void) {
     if (ctcss_sel >= ctcss_table_size) {
         ctcss_sel = 12; // set to 100Hz by default
     }
-    if (ctcss_sel < 37) {
-        increment = 1;
-    } else if (ctcss_sel < 42) {
-        // Starting at ctcss[37], the MCU is too slow
-        // Run the sine wave twice as fast.
-        increment = 2;
-    } else {
-        increment = 4;
-    }
-    //
-    // CTCSS tones range from 0-->67Hz to 41-->254.1 Tail must be 150ms.
-    //
-    // 0.4ms --> 0.123ms
-    d_val = CTCSS_T1_FREQ[ctcss_sel];
-    // Timer1 is 16-bit; use an explicit reload base to avoid operator ambiguity.
-    t1_val = 65536UL - (unsigned long)d_val + (unsigned long)TIMER1_LATENCY;
+    phase_step = CTCSS_PHASE_STEP[ctcss_sel];
 #ifdef ENABLE_LCD
-    sprintf(debug_str,"DelayVal=<%Lu>  ",d_val);
+    sprintf(debug_str,"DDSStep=<%Lu>  ",phase_step);
     debug(2,debug_str);
     sprintf(debug_str,"Timer1=<%Lu>  ",t1_val);
     debug(3,debug_str);
@@ -213,7 +208,11 @@ initialize(void) {
     setup_adc_ports(AMPLITUDE_PORT);
     set_adc_channel(AMPLITUDE_CHANNEL);
     read_adc(ADC_START_ONLY);
+    d_val = DDS_TIMER1_TICKS;
+    t1_val = 65536UL - (unsigned long)d_val + (unsigned long)TIMER1_LATENCY;
     sin_index = 0;
+    phase_accumulator = 0;
+    phase_step = CTCSS_PHASE_STEP[12];
     amplitude=255;
     masterEnable=1;
     output_bit(PTT_OUT, PTT_OFF);

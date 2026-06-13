@@ -21,18 +21,29 @@
 #byte TMR1L = 0x0E
 #byte TMR1H = 0x0F
 #byte PIR1 = 0x0C
+#byte PIE1 = 0x8C
 #bit TMR1IF = PIR1.0
 #bit TMR1ON = T1CON.0
+#bit TMR1IE = PIE1.0
+#bit TMR2IE = PIE1.1
 #define AMP 127
 //#define AMP_MAX 255
 #define ADC_MAX 255
 #define SIN_SAMPLES 32
 #define SIN16_SAMPLES 16
 #define SIN8_SAMPLES 8
+#define DDS_INDEX_BITS 5
+#define DDS_LUT_SIZE (1 << DDS_INDEX_BITS)
+#define DDS_PHASE_TO_INDEX_SHIFT (32 - DDS_INDEX_BITS)
+#define TIMER2_PRESCALER 4
+#define DDS_UPDATE_HZ ((double)MCU_FREQ_MHZ/(TIMER2_PRESCALER*(TIMER2_PERIOD+1)))
+#define DDS_PHASE_SCALE 4294967296.0
+#define DDS_PHASE_STEP_FROM_HZ(freq_hz) ((unsigned int32)((((freq_hz) * DDS_PHASE_SCALE) / DDS_UPDATE_HZ) + 0.5))
 #define TIMER2_PERIOD 63
 #define MCU_FREQ_MHZ 2500000
 #define T1_PRESCALER 1
 #define TIMER1_TICKS(freq, samples) ((unsigned long)(MCU_FREQ_MHZ/(samples)/T1_PRESCALER/(freq) + 0.5))
+#define DDS_TIMER1_TICKS (MCU_FREQ_MHZ/T1_PRESCALER/DDS_UPDATE_HZ)
 #define PTT_ON 1
 #define PTT_OFF 0
 // ISR entry/exit and reload overhead is fundamentally fixed.
@@ -94,7 +105,8 @@ unsigned int sint( unsigned int& v);
 void set_ctcss_period(unsigned int& p);
 unsigned long d_val;
 unsigned long t1_val;
-unsigned int increment;
+unsigned int32 phase_accumulator;
+unsigned int32 phase_step;
 unsigned long tail_counter;
 unsigned int amplitude;
 unsigned int sin_index = 0;
@@ -118,77 +130,65 @@ short ADC_FLAG;
 #define TONE_OUT_PIN PIN_C5
 #define MASTER_ENABLE_PIN PIN_B5
 // Need between 150 and 200ms
-// Decrement occurs every 44us
+// Decrement occurs at DDS update rate.
 #define TAIL_DURATION_MS 150
+#define DDS_TAIL_COUNT_MAX ((unsigned long)((((TAIL_DURATION_MS * DDS_UPDATE_HZ) / 1000.0) + 0.5)))
 //#define REVERSE_BURST_COUNTER_MAX (150/44)*1000
 
 void initialize(void);
 
-// Timer1 values for each CTCSS frequency when running at
-// FOSC = 10MHz
-
-const unsigned long CTCSS_T1_FREQ[] = {		// RC[2:0]:RA[2:0]
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/67,    	// 0 (1166)
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/69.3,	 	// 1
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/71.9,		// 2
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/74.4,		// 3
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/77,		// 4
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/79.7,		// 5
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/82.5,		// 6
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/85.4,		// 7
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/88.5,		// 8
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/91.5,		// 9
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/94.8,		// 10
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/97.4,		// 11
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/100,		// 12
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/103.5,	// 13
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/107.2,	// 14
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/110.9,	// 15
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/114.8,	// 16
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/118.8,	// 17
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/123,		// 18
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/127.3,	// 19
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/131.8,	// 20
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/136.5,	// 21
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/141.3,	// 22
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/146.2,	// 23
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/151.4,	// 24
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/156.7,	// 25
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/162.2,	// 26
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/167.9,	// 27
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/173.8,	// 28
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/179.9,	// 29
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/186.2,	// 30
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/192.8,	// 31
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/203.5,	// 32 (384)
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/206.5,	// 33
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/210.7,	// 34
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/218.1,	// 35
-    MCU_FREQ_MHZ/SIN_SAMPLES/T1_PRESCALER/225.7,	// 36 (346)
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/229.1,	// 37 (682)
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/233.6,	// 38 (670)
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/241.8,	// 39 (646)
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/250.3,	// 40 (624)
-    MCU_FREQ_MHZ/SIN16_SAMPLES/T1_PRESCALER/254.1,	// 41 (615) --> 246us
-    MCU_FREQ_MHZ/SIN8_SAMPLES/T1_PRESCALER/1950,   // 42 (160) --> 64.1us
-    MCU_FREQ_MHZ/SIN8_SAMPLES/T1_PRESCALER/2175   // 43 (144)  --> 57.47us
+// 32-bit DDS phase increment for each CTCSS frequency at DDS_UPDATE_HZ.
+// Calculation: phase_step = round((tone_hz * 2^32) / DDS_UPDATE_HZ).
+const unsigned int32 CTCSS_PHASE_STEP[] = {
+    DDS_PHASE_STEP_FROM_HZ(67.0),   // 0: 67.0 Hz
+    DDS_PHASE_STEP_FROM_HZ(69.3),   // 1: 69.3 Hz
+    DDS_PHASE_STEP_FROM_HZ(71.9),   // 2: 71.9 Hz
+    DDS_PHASE_STEP_FROM_HZ(74.4),   // 3: 74.4 Hz
+    DDS_PHASE_STEP_FROM_HZ(77.0),   // 4: 77.0 Hz
+    DDS_PHASE_STEP_FROM_HZ(79.7),   // 5: 79.7 Hz
+    DDS_PHASE_STEP_FROM_HZ(82.5),   // 6: 82.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(85.4),   // 7: 85.4 Hz
+    DDS_PHASE_STEP_FROM_HZ(88.5),   // 8: 88.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(91.5),   // 9: 91.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(94.8),   // 10: 94.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(97.4),   // 11: 97.4 Hz
+    DDS_PHASE_STEP_FROM_HZ(100.0),  // 12: 100.0 Hz
+    DDS_PHASE_STEP_FROM_HZ(103.5),  // 13: 103.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(107.2),  // 14: 107.2 Hz
+    DDS_PHASE_STEP_FROM_HZ(110.9),  // 15: 110.9 Hz
+    DDS_PHASE_STEP_FROM_HZ(114.8),  // 16: 114.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(118.8),  // 17: 118.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(123.0),  // 18: 123.0 Hz
+    DDS_PHASE_STEP_FROM_HZ(127.3),  // 19: 127.3 Hz
+    DDS_PHASE_STEP_FROM_HZ(131.8),  // 20: 131.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(136.5),  // 21: 136.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(141.3),  // 22: 141.3 Hz
+    DDS_PHASE_STEP_FROM_HZ(146.2),  // 23: 146.2 Hz
+    DDS_PHASE_STEP_FROM_HZ(151.4),  // 24: 151.4 Hz
+    DDS_PHASE_STEP_FROM_HZ(156.7),  // 25: 156.7 Hz
+    DDS_PHASE_STEP_FROM_HZ(162.2),  // 26: 162.2 Hz
+    DDS_PHASE_STEP_FROM_HZ(167.9),  // 27: 167.9 Hz
+    DDS_PHASE_STEP_FROM_HZ(173.8),  // 28: 173.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(179.9),  // 29: 179.9 Hz
+    DDS_PHASE_STEP_FROM_HZ(186.2),  // 30: 186.2 Hz
+    DDS_PHASE_STEP_FROM_HZ(192.8),  // 31: 192.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(203.5),  // 32: 203.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(206.5),  // 33: 206.5 Hz
+    DDS_PHASE_STEP_FROM_HZ(210.7),  // 34: 210.7 Hz
+    DDS_PHASE_STEP_FROM_HZ(218.1),  // 35: 218.1 Hz
+    DDS_PHASE_STEP_FROM_HZ(225.7),  // 36: 225.7 Hz
+    DDS_PHASE_STEP_FROM_HZ(229.1),  // 37: 229.1 Hz
+    DDS_PHASE_STEP_FROM_HZ(233.6),  // 38: 233.6 Hz
+    DDS_PHASE_STEP_FROM_HZ(241.8),  // 39: 241.8 Hz
+    DDS_PHASE_STEP_FROM_HZ(250.3),  // 40: 250.3 Hz
+    DDS_PHASE_STEP_FROM_HZ(254.1),  // 41: 254.1 Hz
+    DDS_PHASE_STEP_FROM_HZ(1950.0), // 42: 1950.0 Hz
+    DDS_PHASE_STEP_FROM_HZ(2175.0)  // 43: 2175.0 Hz
 };
 
 //#define CTCSS_SEL_DEBUG 43
 //#define AMPLITUDE_DEBUG 511
 
-// Counter Delay Equation:
-// TAIL_DURATION_MS/1000  * ctcss_freq * <pwm samples>
-const unsigned long tailCounterMax[] = {325, 335, 345, 356, 367, 
-                                        379, 392, 406, 420, 434, 
-                                        450, 466, 482, 500, 517,
-                                        536, 555, 575, 595, 616, 
-                                        638, 660, 683, 706, 731, 
-                                        755, 781, 807, 834, 861, 
-                                        889, 917, 947, 976, 1007, 
-                                        1038, 1070, 551, 568, 585, 
-                                        602, 619, 2340, 2610};
-
-const unsigned int ctcss_table_size=sizeof(CTCSS_T1_FREQ)/2;
+const unsigned int ctcss_table_size=sizeof(CTCSS_PHASE_STEP)/sizeof(CTCSS_PHASE_STEP[0]);
 #endif
 
