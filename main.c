@@ -178,8 +178,6 @@ void start_tone(void) {
 #ifdef ENABLE_LCD
     sprintf(debug_str,"DDSStep=<%Lu>  ",phase_step);
     debug(2,debug_str);
-    sprintf(debug_str,"Timer1=<%Lu>  ",t1_val);
-    debug(3,debug_str);
 #endif
     if ( ! toneDisable ) {
       setup_ccp1(CCP_PWM);
@@ -197,7 +195,6 @@ initialize(void) {
     CLOCK_FAIL_FLAG=0;
     setup_ccp1(CCP_OFF);
     setup_timer_2(T2_DIV_BY_4, TIMER2_PERIOD, 1);
-    setup_timer_1(T1_DIV_BY_1 | T1_INTERNAL);
     enable_interrupts(INT_OSC_FAIL);
     enable_interrupts(INT_AD);
     enable_interrupts(GLOBAL);
@@ -208,8 +205,6 @@ initialize(void) {
     setup_adc_ports(AMPLITUDE_PORT);
     set_adc_channel(AMPLITUDE_CHANNEL);
     read_adc(ADC_START_ONLY);
-    d_val = DDS_TIMER1_TICKS;
-    t1_val = 65536UL - (unsigned long)d_val + (unsigned long)TIMER1_LATENCY;
     sin_index = 0;
     phase_accumulator = 0;
     phase_step = CTCSS_PHASE_STEP[12];
@@ -218,16 +213,8 @@ initialize(void) {
     output_bit(PTT_OUT, PTT_OFF);
 }
 
-// Substracted once inside sint() below
 unsigned int sint(unsigned int& v) {
-    // PSAMPLES = 32
-    unsigned int angle = v & 0x1F;
-    unsigned int index = angle & 0x0F;
-    if ((angle & 0x10)) {
-        return (AMP - SinTable16[index]);
-    } else {
-        return (AMP + SinTable16[index]);
-    }
+    return SinTable32[v & 0x1F];
 }
 void updateSinAmpTable(void) {
     int x;

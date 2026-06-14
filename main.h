@@ -4,7 +4,7 @@
  *
  * Created on February 26, 2023, 11:37 AM
  */
-#opt compress
+#opt 9
 #ifndef main_H
 #include <16F690.h>
 #device ADC=8
@@ -17,20 +17,13 @@
 #fuses NOWDT
 #fuses NOMCLR
 #case
-#byte T1CON = 0x10
-#byte TMR1L = 0x0E
-#byte TMR1H = 0x0F
 #byte PIR1 = 0x0C
 #byte PIE1 = 0x8C
-#bit TMR1IF = PIR1.0
-#bit TMR1ON = T1CON.0
-#bit TMR1IE = PIE1.0
 #bit TMR2IE = PIE1.1
 #define AMP 127
 //#define AMP_MAX 255
 #define ADC_MAX 255
 #define SIN_SAMPLES 32
-#define SIN16_SAMPLES 16
 #define SIN8_SAMPLES 8
 #define DDS_INDEX_BITS 5
 #define DDS_LUT_SIZE (1 << DDS_INDEX_BITS)
@@ -41,15 +34,8 @@
 #define DDS_PHASE_STEP_FROM_HZ(freq_hz) ((unsigned int32)((((freq_hz) * DDS_PHASE_SCALE) / DDS_UPDATE_HZ) + 0.5))
 #define TIMER2_PERIOD 63
 #define MCU_FREQ_MHZ 2500000
-#define T1_PRESCALER 1
-#define TIMER1_TICKS(freq, samples) ((unsigned long)(MCU_FREQ_MHZ/(samples)/T1_PRESCALER/(freq) + 0.5))
-#define DDS_TIMER1_TICKS (MCU_FREQ_MHZ/T1_PRESCALER/DDS_UPDATE_HZ)
 #define PTT_ON 1
 #define PTT_OFF 0
-// ISR entry/exit and reload overhead is fundamentally fixed.
-// Keep one base latency and use an optional path trim only if measured.
-// Latency was 28
-#define TIMER1_LATENCY 46
 #define AMPLITUDE_CHANNEL 10
 #define AMPLITUDE_PORT sAN10
 #byte OSCCON=0x8F
@@ -57,7 +43,7 @@
 #bit SCS=0x8F.0
 //#byte CONFIG=0x2007
 
-#use delay (clock=20MHz,crystal=20MHz)
+#use delay (clock=10MHz,crystal=10MHz)
 #use fast_io(A)
 #use fast_io(B)
 #use fast_io(C)
@@ -81,30 +67,17 @@ void get_tone_sel(void);
 void getAmplitude(void);
 void debug(unsigned int line,char* str);
 
-const unsigned int SinTable16[] ={ 
-    AMP * 0,
-    AMP * 0.2,
-    AMP * 0.38,
-    AMP * 0.56,
-    AMP * 0.71,
-    AMP * 0.83,
-    AMP * 0.92,
-    AMP * 0.98,
-    AMP * 1.0,
-    AMP * 0.98,
-    AMP * 0.92,
-    AMP * 0.83,
-    AMP * 0.71,
-    AMP * 0.56,
-    AMP * 0.38,
-    AMP * 0.20};
+const unsigned int SinTable32[] ={
+    127, 152, 176, 198, 217, 233, 244, 252,
+    254, 252, 244, 233, 217, 198, 176, 152,
+    127, 102, 78, 56, 37, 21, 10, 2,
+    0, 2, 10, 21, 37, 56, 78, 102
+};
 
 void start_tone(void);
 void stop_tone(void);
 unsigned int sint( unsigned int& v);
 void set_ctcss_period(unsigned int& p);
-unsigned long d_val;
-unsigned long t1_val;
 unsigned int32 phase_accumulator;
 unsigned int32 phase_step;
 unsigned long tail_counter;
